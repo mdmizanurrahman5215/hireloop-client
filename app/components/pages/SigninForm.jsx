@@ -25,6 +25,11 @@ export default function SigninForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({});
+   const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
+
+  console.log('role', user?.role);
+  
 
   // Handle Input Changes
   const handleChange = (e) => {
@@ -59,41 +64,54 @@ export default function SigninForm() {
   };
 
   // Email & Password Sign In using Better Auth
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validate()) return;
 
-    setIsLoading(true);
-    const toastId = toast.loading('Signing you in...');
+  setIsLoading(true);
+  const toastId = toast.loading('Signing you in...');
 
-    try {
-      await authClient.signIn.email(
-        {
-          email: formData.email,
-          password: formData.password,
-          dontRemember: !formData.rememberMe,
-          callbackURL: '/',
-        },
-        {
-          onRequest: () => setIsLoading(true),
-          onSuccess: (ctx) => {
-            setIsLoading(false);
-            toast.success('Welcome back! Logging you in...', { id: toastId });
+  try {
+    await authClient.signIn.email(
+      {
+        email: formData.email,
+        password: formData.password,
+        dontRemember: !formData.rememberMe,
+      
+      },
+      {
+        onRequest: () => setIsLoading(true),
+        onSuccess: (ctx) => {
+          setIsLoading(false);
+
+      
+          console.log('Full onSuccess Context Data:', ctx.data);
+          const loggedInUser = ctx.data?.user || ctx.data;
+          const userRole = loggedInUser?.role;
+
+          console.log('Extracted userRole:', userRole);
+
+          toast.success('Welcome back! Logging you in...', { id: toastId });
+
+          if (userRole === 'recruiter') {
+            router.push('/dashboard/recruiter');
+          } else {
             router.push('/');
-          },
-          onError: (ctx) => {
-            setIsLoading(false);
-            const errorMsg =
-              ctx.error?.message || 'Invalid email or password. Please try again.';
-            toast.error(errorMsg, { id: toastId });
-          },
-        }
-      );
-    } catch (err) {
-      setIsLoading(false);
-      toast.error('An unexpected error occurred. Please try again.', { id: toastId });
-    }
-  };
+          }
+        },
+        onError: (ctx) => {
+          setIsLoading(false);
+          const errorMsg =
+            ctx.error?.message || 'Invalid email or password. Please try again.';
+          toast.error(errorMsg, { id: toastId });
+        },
+      }
+    );
+  } catch (err) {
+    setIsLoading(false);
+    toast.error('An unexpected error occurred. Please try again.', { id: toastId });
+  }
+};
 
   // Google Social Sign-In using Better Auth
   const handleGoogleSignin = async () => {

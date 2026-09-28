@@ -120,14 +120,14 @@ export default function SignUpForm() {
           role: role,
           linkedin: formData.linkedin || undefined,
           website: formData.website || undefined,
-          callbackURL: role === 'employer' ? '/dashboard/employer' : '/jobs',
+          callbackURL: '/signin',
         },
         {
           onRequest: () => setIsLoading(true),
           onSuccess: () => {
             setIsLoading(false);
             toast.success('Account created successfully! Welcome to Hireloop 🎉', { id: toastId });
-            router.push('/login');
+            router.push('/signin');
           },
           onError: (ctx) => {
             setIsLoading(false);
@@ -150,7 +150,7 @@ export default function SignUpForm() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: role === 'employer' ? '/dashboard/employer' : '/jobs',
+        callbackURL: role === 'recruiter' ? '/dashboard/recruiter' : '/',
         errorCallbackURL: '/signup',
       });
     } catch (err) {
@@ -207,17 +207,17 @@ export default function SignUpForm() {
           <button
             type="button"
             onClick={() => {
-              setRole('employer');
-              toast('Switched to Employer Signup', { icon: '💼' });
+              setRole('recruiter');
+              toast('Switched to Recruiter Signup', { icon: '💼' });
             }}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 ${
-              role === 'employer'
+              role === 'recruiter'
                 ? 'bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-md'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             <Briefcase size={16} />
-            Employer / Recruiter
+           Recruiter
           </button>
         </div>
 
@@ -301,14 +301,14 @@ export default function SignUpForm() {
               <p className="text-xs text-rose-500 font-medium">{errors.image}</p>
             )}
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Upload {role === 'employer' ? 'Company Logo' : 'Profile Picture'} (Max 2MB)
+              Upload {role === 'recruiter' ? 'Company Logo' : 'Profile Picture'} (Max 2MB)
             </span>
           </div>
 
           {/* Full Name / Company Name */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-              {role === 'employer' ? 'Company Name *' : 'Full Name *'}
+              {role === 'recruiter' ? 'Company Name *' : 'Full Name *'}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
@@ -319,7 +319,7 @@ export default function SignUpForm() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder={role === 'employer' ? 'Acme Inc.' : 'John Doe'}
+                placeholder={role === 'recruiter' ? 'Acme Inc.' : 'John Doe'}
                 className={`w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white transition-all focus:outline-none focus:ring-2 ${
                   errors.name
                     ? 'border-rose-500 focus:ring-rose-500/20'
@@ -463,7 +463,7 @@ export default function SignUpForm() {
                   name="website"
                   value={formData.website}
                   onChange={handleChange}
-                  placeholder={role === 'employer' ? 'Company Website' : 'Portfolio URL'}
+                  placeholder={role === 'recruiter' ? 'Company Website' : 'Portfolio URL'}
                   className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
               </div>
@@ -482,7 +482,7 @@ export default function SignUpForm() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
-                Create {role === 'employer' ? 'Employer' : 'Candidate'} Account
+                Create {role === 'recruiter' ? 'Recruiter' : 'Candidate'} Account
                 <ArrowRight size={18} />
               </>
             )}

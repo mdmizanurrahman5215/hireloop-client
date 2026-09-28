@@ -1,31 +1,49 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Briefcase, 
-  Users, 
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard,
+  Building2,
+  Briefcase,
+  Users,
   Settings,
   ChevronRight,
   Sparkles,
-  X
-} from 'lucide-react';
+  X,
+} from "lucide-react";
+import { authClient } from "../../lib/auth-client";
 
 const NAV_ITEMS = [
-  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { id: 'my-company', name: 'My Company', icon: Building2, href: '/company' },
-  { id: 'manage-jobs', name: 'Manage Jobs', icon: Briefcase, href: '/jobs' },
-  { id: 'applications', name: 'Applications', icon: Users, href: '/applications' },
-  { id: 'settings', name: 'Settings', icon: Settings, href: '/settings' },
+  {
+    id: "dashboard",
+    name: "Dashboard",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+  },
+  { id: "my-company", name: "My Company", icon: Building2, href: "/company" },
+  { id: "manage-jobs", name: "Manage Jobs", icon: Briefcase, href: "/jobs" },
+  {
+    id: "applications",
+    name: "Applications",
+    icon: Users,
+    href: "/applications",
+  },
+  { id: "settings", name: "Settings", icon: Settings, href: "/settings" },
 ];
 
-export default function Sidebar({ activeTab, onSelectTab, isMobileOpen, setIsMobileOpen }) {
+export default function Sidebar({
+  activeTab,
+  onSelectTab,
+  isMobileOpen,
+  setIsMobileOpen,
+}) {
   const pathname = usePathname();
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
   const closeMobileSidebar = () => {
     if (setIsMobileOpen) setIsMobileOpen(false);
@@ -37,7 +55,11 @@ export default function Sidebar({ activeTab, onSelectTab, isMobileOpen, setIsMob
       <div>
         {/* Brand Logo & Close Button */}
         <div className="flex items-center justify-between px-2 py-3 mb-6">
-          <Link href="/" onClick={closeMobileSidebar} className="flex items-center gap-2">
+          <Link
+            href="/"
+            onClick={closeMobileSidebar}
+            className="flex items-center gap-2"
+          >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
               H
             </div>
@@ -58,17 +80,27 @@ export default function Sidebar({ activeTab, onSelectTab, isMobileOpen, setIsMob
 
         {/* User Badge Profile */}
         <div className="bg-[#161B26] border border-gray-800 rounded-2xl p-3.5 mb-6 flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-indigo-900/50 border border-indigo-500/30 shrink-0">
-            <Image 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" 
-              alt="Alex Sterling" 
-              fill 
-              className="object-cover"
-            />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-indigo-900/50 border border-indigo-500/30 shrink-0 flex items-center justify-center">
+            {user?.image ? (
+              <Image
+                src={user.image}
+                alt={user?.name || "User Avatar"}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              /* ইমেজ না থাকলে নামের প্রথম অক্ষরটি Capital Letter-এ দেখাবে */
+              <span className="text-indigo-300 font-bold text-base select-none">
+                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              </span>
+            )}
           </div>
+
           <div className="overflow-hidden">
-            <h4 className="text-sm font-semibold text-white truncate">Alex Sterling</h4>
-            <p className="text-[11px] text-gray-400 truncate">Recruiter</p>
+            <h4 className="text-sm font-semibold text-white truncate">
+              {user?.name}
+            </h4>
+            <p className="text-[11px] text-gray-400 truncate">{user?.role}</p>
             <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[9px] font-medium text-amber-400 uppercase tracking-wider">
               <Sparkles size={10} /> Premium Account
             </div>
@@ -79,7 +111,9 @@ export default function Sidebar({ activeTab, onSelectTab, isMobileOpen, setIsMob
         <nav className="space-y-1.5">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab ? activeTab === item.id : pathname === item.href;
+            const isActive = activeTab
+              ? activeTab === item.id
+              : pathname === item.href;
 
             return (
               <Link
@@ -91,12 +125,15 @@ export default function Sidebar({ activeTab, onSelectTab, isMobileOpen, setIsMob
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/20'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/20"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon size={18} className={isActive ? 'text-white' : 'text-gray-400'} />
+                  <Icon
+                    size={18}
+                    className={isActive ? "text-white" : "text-gray-400"}
+                  />
                   <span>{item.name}</span>
                 </div>
                 {isActive && <ChevronRight size={14} className="opacity-80" />}
@@ -136,10 +173,10 @@ export default function Sidebar({ activeTab, onSelectTab, isMobileOpen, setIsMob
 
             {/* Sliding Mobile Sidebar */}
             <motion.aside
-              initial={{ x: '-100%' }}
+              initial={{ x: "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed top-0 left-0 bottom-0 w-72 bg-[#0F1117] border-r border-gray-800/80 shadow-2xl z-50 overflow-y-auto"
             >
               <SidebarContent />

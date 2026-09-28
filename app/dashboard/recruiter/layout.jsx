@@ -2,7 +2,7 @@ import { Toaster } from 'react-hot-toast';
 // import Sidebar from "../components/dashboard/Sidebar";
 
 export const metadata = {
-  title: "HireLoop Dashboard",
+  title: "Recruiter Dashboard",
   description: "Find your best career",
 };
 
