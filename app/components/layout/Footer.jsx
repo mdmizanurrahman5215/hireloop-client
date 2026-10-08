@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 
 // Custom Social Media SVG Components
 const FacebookIcon = ({ size = 18, className = '' }) => (
@@ -53,16 +52,8 @@ const FOOTER_SECTIONS = [
 ];
 
 export default function Footer() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
   return (
-    <footer
-      className={`w-full pt-16 pb-8 border-t transition-colors duration-300 ${
-        isDarkMode
-          ? 'bg-[#05070B] text-gray-400 border-gray-900'
-          : 'bg-gray-100 text-gray-600 border-gray-200'
-      }`}
-    >
+    <footer className="w-full pt-16 pb-8 border-t transition-colors duration-300 bg-gray-100 dark:bg-[#05070B] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-900">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Top Grid Section */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-16">
@@ -85,7 +76,7 @@ export default function Footer() {
               </motion.div>
             </Link>
 
-            <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
+            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
               The AI-native career platform. Built for people who take their work seriously.
             </p>
           </div>
@@ -94,7 +85,7 @@ export default function Footer() {
           <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
             {FOOTER_SECTIONS.map((section) => (
               <div key={section.title} className="space-y-4">
-                <h3 className="text-sm font-semibold text-indigo-400 tracking-wide">
+                <h3 className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 tracking-wide">
                   {section.title}
                 </h3>
                 <ul className="space-y-2.5">
@@ -102,11 +93,7 @@ export default function Footer() {
                     <li key={link.name}>
                       <Link
                         href={link.href}
-                        className={`text-sm transition-colors ${
-                          isDarkMode
-                            ? 'text-gray-400 hover:text-white'
-                            : 'text-gray-600 hover:text-black'
-                        }`}
+                        className="text-sm transition-colors text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
                       >
                         {link.name}
                       </Link>
@@ -119,7 +106,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar Section */}
-        <div className="pt-8 border-t border-gray-900/60 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="pt-8 border-t border-gray-200 dark:border-gray-900/60 flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Social Media Buttons */}
           <div className="flex items-center space-x-3">
             {/* Facebook */}
@@ -130,11 +117,7 @@ export default function Footer() {
               target="_blank"
               rel="noreferrer"
               aria-label="Facebook"
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                isDarkMode
-                  ? 'bg-gray-900/80 text-gray-400 hover:bg-gray-800 hover:text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-gray-200 dark:bg-gray-900/80 text-gray-700 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
             >
               <FacebookIcon size={18} />
             </motion.a>
@@ -160,23 +143,19 @@ export default function Footer() {
               target="_blank"
               rel="noreferrer"
               aria-label="LinkedIn"
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                isDarkMode
-                  ? 'bg-gray-900/80 text-gray-400 hover:bg-gray-800 hover:text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-gray-200 dark:bg-gray-900/80 text-gray-700 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
             >
               <LinkedinIcon size={18} />
             </motion.a>
           </div>
 
           {/* Copyright & Policy Links */}
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-xs text-gray-500 text-center sm:text-right">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-xs text-gray-500 dark:text-gray-400 text-center sm:text-right">
             <span>Copyright 2024 — Programming Hero</span>
             <span className="hidden sm:inline">•</span>
             <Link
               href="/terms-and-policy"
-              className="hover:text-gray-300 transition-colors"
+              className="hover:text-gray-900 dark:hover:text-gray-300 transition-colors"
             >
               Terms & Policy - Privacy Guideline
             </Link>

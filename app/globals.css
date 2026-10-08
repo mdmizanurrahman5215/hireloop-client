@@ -1,3 +1,17 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    background-color: #f9fafb; /* Light mode background (gray-50) */
+    color: #111827;            /* Light mode text (gray-900) */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .dark body {
+    background-color: #0b0f17; /* Dark mode background */
+    color: #ffffff;            /* Dark mode text */
+  }
+}
