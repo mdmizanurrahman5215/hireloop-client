@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2, Plus, Check } from 'lucide-react';
 import { uploadImageToImgBB } from '../../lib/uploadImageToImgBB';
-import { createCompanyAction } from '../../actions/companyActions';
+import { createCompanyAction } from '@/app/lib/actions/companyActions';
 import toast from 'react-hot-toast';
 
 

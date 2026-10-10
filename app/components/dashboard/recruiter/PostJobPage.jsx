@@ -34,7 +34,8 @@ import {
   jobTypeOptions,
 } from "../../../constants/recruiter/job.constants";
 import toast from "react-hot-toast";
-import { createJobAction } from "../../../actions/jobActions";
+import { createJobAction } from "../../../lib/actions/jobActions";
+
 
 const initialValues = {
   jobTitle: "",

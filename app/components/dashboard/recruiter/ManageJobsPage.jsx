@@ -2,40 +2,45 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import DynamicTable from "@/app/components/common/DynamicTable";
 import { toast } from "react-hot-toast";
 
-export default function ManageJobsPage({ recruiterCompany }) {
-  const [jobs, setJobs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultSearch, defaultStatus }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Fetch recruiter's jobs
+  const [jobs, setJobs] = useState(initialJobs || []);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(defaultSearch || "");
+  const [statusFilter, setStatusFilter] = useState(defaultStatus || "all");
+
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setIsLoading(true);
-        const res = await fetch(`/api/jobs/company/${recruiterCompany?.id}`);
-        const data = await res.json();
-
-        if (data.success) {
-          setJobs(data.jobs || []);
-        } else {
-          toast.error("Failed to fetch jobs");
-        }
-      } catch (error) {
-        console.error("Fetch error:", error);
-        toast.error("Error loading job postings");
-      } finally {
-        setIsLoading(false);
+    const handler = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      
+      if (searchTerm) {
+        params.set("search", searchTerm);
+      } else {
+        params.delete("search");
       }
-    };
 
-    if (recruiterCompany?.id) {
-      fetchJobs();
-    }
-  }, [recruiterCompany?.id]);
+      if (statusFilter && statusFilter !== "all") {
+        params.set("status", statusFilter);
+      } else {
+        params.delete("status");
+      }
+
+      router.push(`?${params.toString()}`, { scroll: false });
+    }, 300); 
+
+    return () => clearTimeout(handler);
+  }, [searchTerm, statusFilter, router, searchParams]);
+
+ 
+  useEffect(() => {
+    setJobs(initialJobs || []);
+  }, [initialJobs]);
 
   // Handle Delete Action
   const handleDeleteJob = async (jobId) => {
@@ -56,18 +61,6 @@ export default function ManageJobsPage({ recruiterCompany }) {
       toast.error("An error occurred while deleting the job.");
     }
   };
-
-  // Filter logic for Search and Status
-  const filteredJobs = jobs.filter((job) => {
-    const titleMatch = job.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    const categoryMatch = job.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSearch = titleMatch || categoryMatch;
-
-    const matchesStatus =
-      statusFilter === "all" ? true : job.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
 
   // Table Column Definitions
   const columns = [
@@ -219,7 +212,7 @@ export default function ManageJobsPage({ recruiterCompany }) {
       {/* Dynamic Table Integration */}
       <DynamicTable
         columns={columns}
-        data={filteredJobs}
+        data={jobs}
         isLoading={isLoading}
         pageSize={10}
         emptyMessage="No job postings found matching your filter criteria."

@@ -1,5 +1,10 @@
 import axios from "axios";
-import { apiRequest, createAction } from "./core/apiClient";
+import { createAction } from "./create-action";
+import { apiRequest } from "./api-request";
+
+
+
+
 
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -29,20 +34,23 @@ export async function getJobsAction({ companyId, status = "active" } = {}) {
   }
 }
 
-
-export const getCompaniesByRecruiterAction = createAction(
-  { requireAuth: true }, 
+export const getCompaniesByRecruiter = createAction(
+  { requireAuth: true },
   async (payload, user) => {
-   
-    const targetUserId = payload?.recruiterId || user.id;
+    console.log("Fetching companies user:", user); 
+    const targetUserId = payload?.recruiterId || user?.id || user?._id;
+    console.log("Fetching companies for recruiter ID:", targetUserId); // Debugging log
 
-   
-    return await apiRequest('/api/companies', null, {
+    return apiRequest('/api/my/companies', null, {
       method: 'GET',
       params: { userId: targetUserId },
+      // token,
     });
   }
 );
+
+
+
 
 export const getJobs = createAction(
   { requireAuth: false },
@@ -55,3 +63,28 @@ export const getJobs = createAction(
     });
   }
 );
+
+export const getJobById = createAction(
+  { requireAuth: false },
+  async (id) => {
+    console.log("Fetching job with ID:", id); // Debugging log
+    return await apiRequest(`api/jobs/${id}`, null, {
+      method: 'GET',
+    });
+  }
+);
+
+export const getJobsByCompany = createAction(
+  { requireAuth: true },
+  async (payload, user) => {
+
+    const targetedId = payload ;
+    return apiRequest('/api/jobs/', null, {
+      method: 'GET',
+      params: { companyId: targetedId },
+      // token,
+    });
+  }
+);
+
+

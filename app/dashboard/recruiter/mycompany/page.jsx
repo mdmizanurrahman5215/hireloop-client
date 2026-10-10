@@ -1,9 +1,14 @@
 import React from 'react';
 import MyCompanyPage from '../../../components/dashboard/recruiter/company/MyCompanyPage';
-import { getCompaniesByRecruiterAction } from '../../../lib/data';
+import { getCompaniesByRecruiter } from '../../../lib/data';
+
+
+
+
+
 
 const MyCompanyHomePage = async () => {
-  const recruiterCompany = await getCompaniesByRecruiterAction();
+  const recruiterCompany = await getCompaniesByRecruiter();
 
   return (
     <div>

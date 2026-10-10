@@ -2,7 +2,10 @@
 
 import axios from "axios";
 import { revalidatePath } from "next/cache";
-import { getServerUser } from "../lib/core/session";
+import { getServerUser } from "../server-session";
+
+
+
 
 
 
@@ -58,4 +61,5 @@ export async function createCompanyAction(payload) {
     };
   }
 }
+
 
