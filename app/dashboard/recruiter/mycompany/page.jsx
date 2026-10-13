@@ -8,7 +8,8 @@ import { getCompaniesByRecruiter } from '../../../lib/data';
 
 
 const MyCompanyHomePage = async () => {
-  const recruiterCompany = await getCompaniesByRecruiter();
+  const recruiterCompany = await getCompaniesByRecruiter(); 
+  console.log("Recruiter company data:", recruiterCompany);
 
   return (
     <div>

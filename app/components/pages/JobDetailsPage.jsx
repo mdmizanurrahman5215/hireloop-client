@@ -31,17 +31,28 @@ export default function JobDetailsPage({ job }) {
   };
 
   // 2. Safe helper to format Salary (handles numbers, strings, or { min, max, currency })
-  const formatSalary = (salary) => {
-    if (!salary) return "Negotiable";
-    if (typeof salary === "string" || typeof salary === "number") return salary;
-    if (typeof salary === "object") {
-      const { min, max, currency = "$" } = salary;
-      if (min && max) return `${currency}${min.toLocaleString()} - ${currency}${max.toLocaleString()}`;
-      if (min) return `From ${currency}${min.toLocaleString()}`;
-      if (max) return `Up to ${currency}${max.toLocaleString()}`;
+const formatSalary = (salary) => {
+  if (!salary) return "Negotiable";
+  if (typeof salary === "string" || typeof salary === "number") {
+    return salary;
+  }
+  if (typeof salary === "object") {
+    const { min, max, currency = "BDT" } = salary;
+    const currencySymbol = typeof currency === "object" ? currency?.label || currency?.value || "BDT" : currency;
+
+    if (min && max) {
+      return `${currencySymbol} ${min.toLocaleString()} - ${currencySymbol} ${max.toLocaleString()}`;
     }
-    return "Negotiable";
-  };
+    if (min) {
+      return `From ${currencySymbol} ${min.toLocaleString()}`;
+    }
+    if (max) {
+      return `Up to ${currencySymbol} ${max.toLocaleString()}`;
+    }
+  }
+
+  return "Negotiable";
+};
 
   // 3. Safe helper to convert lists/objects into clean renderable arrays
   const normalizeToList = (data) => {
@@ -58,18 +69,18 @@ export default function JobDetailsPage({ job }) {
     return [];
   };
 
-  const responsibilitiesList = normalizeToList(job?.responsibilities);
+  const responsibilitiesList = normalizeToList(job?.description?.responsibilities) || normalizeToList(job?.responsibilities);
   const requirementsList =
-    normalizeToList(job?.requirementsList) || normalizeToList(job?.requirements);
+    normalizeToList(job?.description?.requirements) || normalizeToList(job?.requirements);
 
   // 4. Normalized metrics object guarantees only primitive values (strings/numbers)
   const formattedMetrics = {
     location: formatLocation(job?.location || job?.metrics?.location),
-    jobType: job?.jobType || job?.type || job?.metrics?.jobType || "Full-time",
+    jobType: job?.jobType?.label || job?.jobType || job?.metrics?.jobType || "Full-time",
     experience: job?.experience || job?.metrics?.experience || "Not specified",
     salary: formatSalary(job?.salary || job?.metrics?.salary),
   };
-
+ console.log("Formatted Metrics:", formattedMetrics);
   // Safe string location pass for JobHeaderBanner
   const safeJobHeader = {
     ...job,

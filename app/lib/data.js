@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createAction } from "./create-action";
+import { createClientAction, createServerAction } from "./create-action";
 import { apiRequest } from "./api-request";
 
 
@@ -34,12 +34,12 @@ export async function getJobsAction({ companyId, status = "active" } = {}) {
   }
 }
 
-export const getCompaniesByRecruiter = createAction(
+export const getCompaniesByRecruiter = createServerAction(
   { requireAuth: true },
   async (payload, user) => {
     console.log("Fetching companies user:", user); 
     const targetUserId = payload?.recruiterId || user?.id || user?._id;
-    console.log("Fetching companies for recruiter ID:", targetUserId); // Debugging log
+    console.log("Fetching companies for recruiter ID:", targetUserId); 
 
     return apiRequest('/api/my/companies', null, {
       method: 'GET',
@@ -52,29 +52,29 @@ export const getCompaniesByRecruiter = createAction(
 
 
 
-export const getJobs = createAction(
+export const getJobs = createServerAction(
   { requireAuth: false },
   async (filters = {}) => {
-    console.log("Fetching jobs with filters:", filters); // Debugging log
-    // filters hobe: { page: 1, search: 'Frontend', type: 'Full-time' }
+    console.log("Fetching jobs with filters:", filters);
     return await apiRequest('api/jobs', null, {
       method: 'GET',
-      params: filters, // query string hisebe URL-e jabe
+      params: filters, 
     });
   }
 );
 
-export const getJobById = createAction(
+export const getJobById = createServerAction(
   { requireAuth: false },
   async (id) => {
-    console.log("Fetching job with ID:", id); // Debugging log
+    console.log("Fetching job with ID:", id); 
     return await apiRequest(`api/jobs/${id}`, null, {
       method: 'GET',
     });
   }
 );
 
-export const getJobsByCompany = createAction(
+
+export const getJobsByCompany = createServerAction(
   { requireAuth: true },
   async (payload, user) => {
 

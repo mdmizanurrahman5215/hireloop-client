@@ -9,7 +9,7 @@ import ActiveRolesCard from './ActiveRolesCard';
 
 export default function MyCompanyPage({ initialCompany }) {
   // Pass initialCompany from Server Component
-  const [company, setCompany] = useState(initialCompany);
+  const [company, setCompany] = useState(initialCompany?.data?.companies[0] || {});
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const mockRoles = [

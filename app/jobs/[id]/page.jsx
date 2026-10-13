@@ -1,3 +1,4 @@
+
 import React from 'react'
 import JobDetailsPage from '../../components/pages/JobDetailsPage'
 import { getJobById } from '../../lib/data'

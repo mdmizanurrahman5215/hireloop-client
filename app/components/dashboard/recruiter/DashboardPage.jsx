@@ -155,7 +155,7 @@ export default function DashboardPage() {
 </div>
 
       {/* Stat Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
         {MOCK_STATS.map((stat) => (
           <StatCard key={stat.id} {...stat} />
         ))}

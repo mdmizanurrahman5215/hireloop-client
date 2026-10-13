@@ -26,15 +26,30 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
     href: "/dashboard/recruiter",
   },
-  { id: "my-company", name: "My Company", icon: Building2, href: "/dashboard/recruiter/mycompany" },
-  { id: "manage-jobs", name: "Manage Jobs", icon: Briefcase, href: "/dashboard/recruiter/jobs" },
+  { 
+    id: "my-company", 
+    name: "My Company", 
+    icon: Building2, 
+    href: "/dashboard/recruiter/mycompany" 
+  },
+  { 
+    id: "manage-jobs", 
+    name: "Manage Jobs", 
+    icon: Briefcase, 
+    href: "/dashboard/recruiter/jobs" 
+  },
   {
     id: "applications",
     name: "Applications",
     icon: Users,
     href: "/dashboard/recruiter/applications",
   },
-  { id: "settings", name: "Settings", icon: Settings, href: "/dashboard/recruiter/settings" },
+  { 
+    id: "settings", 
+    name: "Settings", 
+    icon: Settings, 
+    href: "/dashboard/recruiter/settings" 
+  },
 ];
 
 export default function Sidebar({
@@ -47,12 +62,11 @@ export default function Sidebar({
   const { data: session } = authClient.useSession();
   const user = session?.user;
 
-  // Simple state for local demo, replace with your `next-themes` or global theme state hook if using one.
+  // Simple state for local demo or dark mode toggle
   const [isDarkMode, setIsDarkMode] = React.useState(true);
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => !prev);
-    // If using standard Tailwind HTML class-based darkMode ('selector' mode):
     document.documentElement.classList.toggle("dark");
   };
 
@@ -135,9 +149,11 @@ export default function Sidebar({
         <nav className="space-y-1.5">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab
-              ? activeTab === item.id
-              : pathname === item.href;
+
+            // Robust active link check using pathname
+            const isActive = item.href === "/dashboard/recruiter"
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link

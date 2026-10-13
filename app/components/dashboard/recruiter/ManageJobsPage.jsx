@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import DynamicTable from "@/app/components/common/DynamicTable";
+import ConfirmModal from "@/app/components/modals/ConfirmModal";
 import { toast } from "react-hot-toast";
+import { deleteJob } from "../../../lib/actions/jobActions";
 
 export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultSearch, defaultStatus }) {
   const router = useRouter();
@@ -15,6 +17,16 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
   const [searchTerm, setSearchTerm] = useState(defaultSearch || "");
   const [statusFilter, setStatusFilter] = useState(defaultStatus || "all");
 
+  // Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [jobToEdit, setJobToEdit] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Sync URL search params with debounce
   useEffect(() => {
     const handler = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
@@ -37,28 +49,37 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
     return () => clearTimeout(handler);
   }, [searchTerm, statusFilter, router, searchParams]);
 
- 
   useEffect(() => {
     setJobs(initialJobs || []);
   }, [initialJobs]);
 
-  // Handle Delete Action
-  const handleDeleteJob = async (jobId) => {
-    if (!confirm("Are you sure you want to delete this job posting?")) return;
+  // --- DELETE FLOW ---
+  const promptDeleteJob = (job) => {
+    setJobToDelete(job);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!jobToDelete) return;
+    setIsDeleting(true);
 
     try {
-      const res = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
-      const data = await res.json();
+      const data = await deleteJob(jobToDelete._id);
+      console.log("Delete response:", data);
 
       if (data.success) {
         toast.success("Job deleted successfully!");
-        setJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobId));
+        setJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobToDelete._id));
+        setDeleteModalOpen(false);
+        setJobToDelete(null);
       } else {
         toast.error(data.message || "Failed to delete job");
       }
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("An error occurred while deleting the job.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -71,7 +92,7 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
       cell: (row) => (
         <div>
           <p className="font-medium text-gray-900 dark:text-gray-100">{row.title}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{row.category || "General"}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{row?.category?.label || row?.category || "General"}</p>
         </div>
       ),
     },
@@ -81,7 +102,7 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
       sortable: true,
       cell: (row) => (
         <span className="capitalize px-2 py-0.5 text-xs border rounded text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          {row.jobType || "Full-time"}
+          {row.jobType?.label || row.jobType || "Full-time"}
         </span>
       ),
     },
@@ -146,13 +167,13 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
             View
           </Link>
           <Link
-            href={`/dashboard/jobs/edit/${row._id}`}
+            href={`/dashboard/recruiter/jobs/${row._id}/edit`}
             className="px-2 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded transition-colors"
           >
             Edit
           </Link>
           <button
-            onClick={() => handleDeleteJob(row._id)}
+            onClick={() => promptDeleteJob(row)}
             className="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded transition-colors"
           >
             Delete
@@ -173,7 +194,7 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
           </p>
         </div>
         <Link
-          href="/dashboard/post-job"
+          href="/dashboard/recruiter/jobs/new"
           className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
         >
           + Post New Job
@@ -182,7 +203,6 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
 
       {/* Filters and Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm transition-colors">
-        {/* Search Input */}
         <input
           type="text"
           placeholder="Search by title or category..."
@@ -191,7 +211,6 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
           className="w-full sm:w-80 px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
         />
 
-        {/* Status Filter */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="status" className="text-xs font-medium text-gray-600 dark:text-gray-400">
             Filter Status:
@@ -217,6 +236,27 @@ export default function ManageJobsPage({ recruiterCompany, initialJobs, defaultS
         pageSize={10}
         emptyMessage="No job postings found matching your filter criteria."
       />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Job Posting"
+        message={`Are you sure you want to delete "${jobToDelete?.title || "this job"}"? This action cannot be undone.`}
+        confirmText="Delete Job"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* Edit Job Modal */}
+      {/* <EditJobModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        job={jobToEdit}
+        onSave={handleConfirmUpdate}
+        isLoading={isUpdating}
+      /> */}
     </div>
   );
 }
