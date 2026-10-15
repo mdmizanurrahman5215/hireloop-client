@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -24,11 +23,11 @@ export default function ModalContainer({
       onClose={onClose}
       maxWidth={maxWidth}
       fullWidth
-      PaperProps={{
-        className:
-          'bg-white dark:bg-slate-900 !text-slate-900 dark:!text-slate-100 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden',
-      }}
       slotProps={{
+        paper: {
+          className:
+            'bg-white dark:bg-slate-900 !text-slate-900 dark:!text-slate-100 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden',
+        },
         backdrop: {
           className: 'bg-slate-950/50 dark:bg-black/70',
         },
@@ -68,4 +67,3 @@ export default function ModalContainer({
     </Dialog>
   );
 }
-

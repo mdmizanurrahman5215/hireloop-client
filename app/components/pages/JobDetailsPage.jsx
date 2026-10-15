@@ -6,16 +6,145 @@ import JobRequirementsList from "../common/jobs/jobDetails/JobRequirementsList";
 import JobBenefitsGrid from "../common/jobs/jobDetails/JobBenefitsGrid";
 import CompanyOverviewCard from "../cards/CompanyOverviewCard";
 import JobApplicationModal from "../modals/JobApplicationModal";
+import { getClientUser } from "../../lib/client-session";
+import { useRouter } from "next/navigation";
+import { createApplication } from "../../lib/actions/applicationAction";
+import toast from "react-hot-toast";
 
-export default function JobDetailsPage({ job }) {
+
+export default function JobDetailsPage({ job , id }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
+ 
+  console.log("JobDetailsPage received job:", job);
 
-  const handleApplySubmit = async (formData) => {
-    console.log("Submitted Application Data:", formData);
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+  const handleApply = async () => {
+     const user = await getClientUser();
+    console.log("User attempting to apply:", user);
+    if (!user) {
+      router.push(`/signin?redirect=/jobs/${id}`);
+    } else {
+      setIsModalOpen(true);
+    }
   };
 
-  // 1. Safe helper to format Location (handles strings or { city, country, remote })
+
+//  const handleApplySubmit = async (values, { resetForm } = {}) => {
+//   const payload = {
+//     userId: job?.userId || '',
+//     companyId: job?.company?._id || job?.companyId || '',
+//     jobId: job?._id || job?.id || id || '',
+//     fullName: values.fullName || '',
+//     email: values.email || '',
+//     phone: values.phone || '',
+//     portfolio: values.portfolio || '',
+//     coverLetter: values.coverLetter || '',
+//     experience: values.experience?.label || values.experience || '',
+//     resume: values.resume || '',
+//   };
+//    console.log('resume:',values.resume);
+//   const loadingToastId = toast.loading('Submitting your application...');
+//   console.log('Submitting application payload:', payload);
+
+//   try {
+//     const result = await createApplication(payload);
+
+//     if (result && (result.success === false || result.error)) {
+//       const errorMessage = result.error || result.message || 'Failed to post application';
+//       toast.error(errorMessage, { id: loadingToastId });
+//       console.error('Application submission failed:', result);
+//       return;
+//     }
+
+//     toast.success('Your job application was submitted successfully!', {
+//       id: loadingToastId,
+//     });
+//     console.log('Application Submitted Successfully:', result);
+
+//     if (resetForm) {
+//       resetForm();
+//     }
+//   } catch (error) {
+//     toast.error(`Submission error: ${error.message || 'Something went wrong'}`, {
+//       id: loadingToastId,
+//     });
+//     console.error('Submission error:', error);
+//   }
+// };
+  
+const handleApplySubmit = async (values, { resetForm } = {}) => {
+  const resume = values.resume;
+
+  // Backend requires an actual uploaded file.
+  if (
+    typeof File === "undefined" ||
+    !(resume instanceof File) ||
+    resume.size === 0
+  ) {
+    toast.error("Please select your resume file.");
+    return;
+  }
+
+ const formData = new FormData();
+
+formData.append("userId", job?.userId || "");
+formData.append("companyId", job?.company?._id || job?.companyId || "");
+formData.append("jobId", job?._id || job?.id || id || "");
+formData.append("fullName", values.fullName || "");
+formData.append("email", values.email || "");
+formData.append("phone", values.phone || "");
+formData.append("portfolio", values.portfolio || "");
+formData.append("coverLetter", values.coverLetter || "");
+formData.append(
+  "experience",
+  values.experience?.label || values.experience || ""
+);
+
+formData.append("resume", values.resume);
+
+console.log(
+  "FormData entries:",
+  [...formData.entries()].map(([key, value]) => [
+    key,
+    value instanceof File ? value.name : value,
+  ])
+);
+
+  const loadingToastId = toast.loading(
+    "Submitting your application..."
+  );
+
+  try {
+    const result = await createApplication(formData);
+
+    if (!result?.success || result?.error) {
+      toast.error(
+        result?.error || result?.message || "Failed to post application",
+        { id: loadingToastId }
+      );
+
+      console.error("Application submission failed:", result);
+      return;
+    }
+
+    toast.success("Your job application was submitted successfully!", {
+      id: loadingToastId,
+    });
+
+    console.log("Application submitted:", result);
+
+    resetForm?.();
+  } catch (error) {
+    toast.error(
+      `Submission error: ${error.message || "Something went wrong"}`,
+      { id: loadingToastId }
+    );
+
+    console.error("Submission error:", error);
+  }
+};
+
+// 1. Safe helper to format Location (handles strings or { city, country, remote })
   const formatLocation = (loc) => {
     if (!loc) return "Not specified";
     if (typeof loc === "string") return loc;
@@ -94,7 +223,7 @@ const formatSalary = (salary) => {
         {/* Header Banner */}
         <JobHeaderBanner
           job={safeJobHeader}
-          onApplyClick={() => setIsModalOpen(true)}
+          onApplyClick={() => handleApply()}
         />
 
         {/* Layout Grid */}
@@ -165,7 +294,7 @@ const formatSalary = (salary) => {
           title: job?.title,
           company: job?.companyName || job?.company?.name,
         }}
-        onSubmitApi={handleApplySubmit}
+        onSubmit={handleApplySubmit}
       />
     </div>
   );

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
@@ -20,12 +20,12 @@ import {
 } from 'lucide-react';
 import { authClient } from '../../lib/auth-client';
 
-
 export default function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
 
-  // Form State
-  const [role, setRole] = useState('jobseeker'); // 'jobseeker' | 'employer'
+  const [role, setRole] = useState('jobseeker');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -35,7 +35,6 @@ export default function SignUpForm() {
     linkedin: '',
   });
 
-  // UI & File States
   const [imagePreview, setImagePreview] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -44,28 +43,19 @@ export default function SignUpForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Handle Input Changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  // Convert uploaded image file to Base64
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-    //   if (file.size > 2 * 1024 * 1024) {
-    //     toast.error('Image size must be less than 2MB');
-    //     setErrors((prev) => ({ ...prev, image: 'Max size 2MB' }));
-    //     return;
-    //   }
-
       setImagePreview(URL.createObjectURL(file));
       setErrors((prev) => ({ ...prev, image: '' }));
       toast.success('Image attached successfully!');
 
-      // Convert file to Base64 String for Better Auth
       const reader = new FileReader();
       reader.onloadend = () => {
         setImageBase64(reader.result);
@@ -74,7 +64,6 @@ export default function SignUpForm() {
     }
   };
 
-  // Form Validation
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Full Name is required';
@@ -102,7 +91,6 @@ export default function SignUpForm() {
     return true;
   };
 
-  // Email & Password Signup using Better Auth
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -120,14 +108,19 @@ export default function SignUpForm() {
           role: role,
           linkedin: formData.linkedin || undefined,
           website: formData.website || undefined,
-          callbackURL: '/signin',
+          callbackURL: redirectTo ? `/signin?redirect=${encodeURIComponent(redirectTo)}` : '/signin',
         },
         {
           onRequest: () => setIsLoading(true),
           onSuccess: () => {
             setIsLoading(false);
             toast.success('Account created successfully! Welcome to Hireloop 🎉', { id: toastId });
-            router.push('/signin');
+            
+            if (redirectTo) {
+              router.push(`/signin?redirect=${encodeURIComponent(redirectTo)}`);
+            } else {
+              router.push('/signin');
+            }
           },
           onError: (ctx) => {
             setIsLoading(false);
@@ -142,7 +135,6 @@ export default function SignUpForm() {
     }
   };
 
-  // Google Social Sign-In using Better Auth
   const handleGoogleSignup = async () => {
     setIsGoogleLoading(true);
     const toastId = toast.loading('Connecting to Google...');
@@ -150,8 +142,8 @@ export default function SignUpForm() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: role === 'recruiter' ? '/dashboard/recruiter' : '/',
-        errorCallbackURL: '/signup',
+        callbackURL: redirectTo ? `/signin?redirect=${encodeURIComponent(redirectTo)}` : (role === 'recruiter' ? '/dashboard/recruiter' : '/'),
+        errorCallbackURL: redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup',
       });
     } catch (err) {
       setIsGoogleLoading(false);
@@ -161,18 +153,15 @@ export default function SignUpForm() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0B0F17] transition-colors duration-300 relative overflow-hidden">
-      {/* Background Glow Elements */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/10 dark:bg-violet-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Main Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="max-w-xl w-full bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 sm:p-10 shadow-xl dark:shadow-2xl backdrop-blur-xl relative z-10"
       >
-        {/* Header */}
         <div className="text-center space-y-2 mb-8">
           <Link href="/" className="inline-block mb-2">
             <span className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
@@ -187,7 +176,6 @@ export default function SignUpForm() {
           </p>
         </div>
 
-        {/* Role Switcher */}
         <div className="grid grid-cols-2 gap-2 p-1.5 mb-8 bg-gray-100 dark:bg-gray-800/60 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
           <button
             type="button"
@@ -217,11 +205,10 @@ export default function SignUpForm() {
             }`}
           >
             <Briefcase size={16} />
-           Recruiter
+            Recruiter
           </button>
         </div>
 
-        {/* Google OAuth Login */}
         <div className="mb-6">
           <motion.button
             whileHover={{ scale: 1.01 }}
@@ -259,7 +246,6 @@ export default function SignUpForm() {
           </motion.button>
         </div>
 
-        {/* Divider */}
         <div className="relative my-6 text-center">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-200 dark:border-gray-800" />
@@ -269,9 +255,7 @@ export default function SignUpForm() {
           </span>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Avatar Upload */}
           <div className="flex flex-col items-center justify-center space-y-2">
             <div className="relative group cursor-pointer">
               <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-700 group-hover:border-indigo-500 dark:group-hover:border-indigo-400 flex items-center justify-center bg-gray-50 dark:bg-gray-800 transition-colors">
@@ -305,7 +289,6 @@ export default function SignUpForm() {
             </span>
           </div>
 
-          {/* Full Name / Company Name */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
               {role === 'recruiter' ? 'Company Name *' : 'Full Name *'}
@@ -332,7 +315,6 @@ export default function SignUpForm() {
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
               Email Address *
@@ -359,7 +341,6 @@ export default function SignUpForm() {
             )}
           </div>
 
-          {/* Password Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -432,7 +413,6 @@ export default function SignUpForm() {
             </div>
           </div>
 
-          {/* Social Links */}
           <div className="space-y-3 pt-2">
             <span className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
               Social Links (Optional)
@@ -470,7 +450,6 @@ export default function SignUpForm() {
             </div>
           </div>
 
-          {/* Submit */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
@@ -489,11 +468,10 @@ export default function SignUpForm() {
           </motion.button>
         </form>
 
-        {/* Signin Redirect */}
         <div className="mt-8 text-center text-xs text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
           <Link
-            href="/signin"
+            href={redirectTo ? `/signin?redirect=${encodeURIComponent(redirectTo)}` : '/signin'}
             className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             Sign in here

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 export default function DynamicTable({
   columns = [],
@@ -9,81 +9,117 @@ export default function DynamicTable({
   pageSize = 5,
   emptyMessage = "No data available",
 }) {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "asc",
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 1. Sorting logic
+  // Sorting
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return data;
 
     return [...data].sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
+      const aValue = a?.[sortConfig.key];
+      const bValue = b?.[sortConfig.key];
 
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+
+      const comparison =
+        typeof aValue === "number" && typeof bValue === "number"
+          ? aValue - bValue
+          : String(aValue).localeCompare(String(bValue));
+
+      return sortConfig.direction === "asc"
+        ? comparison
+        : -comparison;
     });
   }, [data, sortConfig]);
 
-  // 2. Pagination logic
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
+  // Pagination
+  const safePageSize = Math.max(1, Number(pageSize) || 5);
 
-  // Reset to page 1 if current page exceeds total pages due to dynamic data updates
-  if (currentPage > totalPages) {
-    setCurrentPage(1);
-  }
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedData.length / safePageSize)
+  );
+
+  // Reset page when data changes or the current page becomes invalid
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return sortedData.slice(start, start + pageSize);
-  }, [sortedData, currentPage, pageSize]);
+    const start = (currentPage - 1) * safePageSize;
+    return sortedData.slice(start, start + safePageSize);
+  }, [sortedData, currentPage, safePageSize]);
 
   const handleSort = (key, sortable) => {
-    if (!sortable) return;
-    setSortConfig((prev) => ({
+    if (!sortable || !key) return;
+
+    setSortConfig((previous) => ({
       key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+      direction:
+        previous.key === key && previous.direction === "asc"
+          ? "desc"
+          : "asc",
     }));
+
+    setCurrentPage(1);
   };
 
   return (
-    <div className="w-full border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden bg-white dark:bg-gray-900 transition-colors">
+    <div className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-colors dark:border-gray-800 dark:bg-gray-900">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 border-collapse">
-          {/* Header */}
-          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 font-semibold uppercase text-xs tracking-wider">
+        <table className="w-full border-collapse text-left text-sm text-gray-700 dark:text-gray-300">
+          <thead className="border-b border-gray-200 bg-gray-100 text-xs font-semibold uppercase tracking-wider text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
             <tr>
-              {columns.map((col, colIndex) => (
+              {columns.map((column, index) => (
                 <th
-                  key={col.key || col.accessor || `col-${colIndex}`}
-                  onClick={() => handleSort(col.accessor, col.sortable)}
+                  key={column.key || column.accessor || `col-${index}`}
+                  onClick={() =>
+                    handleSort(column.accessor, column.sortable)
+                  }
                   className={`px-4 py-3 ${
-                    col.sortable ? "cursor-pointer select-none hover:bg-gray-200 dark:hover:bg-gray-700" : ""
+                    column.sortable
+                      ? "cursor-pointer select-none hover:bg-gray-200 dark:hover:bg-gray-700"
+                      : ""
                   }`}
                 >
                   <div className="flex items-center gap-1">
-                    {col.header}
-                    {col.sortable && sortConfig.key === col.accessor && (
-                      <span>{sortConfig.direction === "asc" ? "▲" : "▼"}</span>
-                    )}
+                    {column.header}
+
+                    {column.sortable &&
+                      sortConfig.key === column.accessor && (
+                        <span aria-label={sortConfig.direction}>
+                          {sortConfig.direction === "asc" ? "▲" : "▼"}
+                        </span>
+                      )}
                   </div>
                 </th>
               ))}
             </tr>
           </thead>
 
-          {/* Body */}
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {isLoading ? (
               <tr>
-                <td colSpan={columns.length || 1} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={columns.length || 1}
+                  className="py-8 text-center text-gray-500 dark:text-gray-400"
+                >
                   Loading data...
                 </td>
               </tr>
             ) : paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length || 1} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={columns.length || 1}
+                  className="py-8 text-center text-gray-500 dark:text-gray-400"
+                >
                   {emptyMessage}
                 </td>
               </tr>
@@ -91,15 +127,22 @@ export default function DynamicTable({
               paginatedData.map((row, rowIndex) => (
                 <tr
                   key={row.id ?? row._id ?? `row-${rowIndex}`}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
-                  {columns.map((col, colIndex) => (
-                    <td key={col.key || col.accessor || `cell-${colIndex}`} className="px-4 py-3">
-                      {col.cell
-                        ? col.cell(row)
-                        : row[col.accessor] !== undefined
-                        ? row[col.accessor]
-                        : "—"}
+                  {columns.map((column, columnIndex) => (
+                    <td
+                      key={
+                        column.key ||
+                        column.accessor ||
+                        `cell-${columnIndex}`
+                      }
+                      className="px-4 py-3"
+                    >
+                      {column.cell
+                        ? column.cell(row)
+                        : row[column.accessor] !== undefined
+                          ? row[column.accessor]
+                          : "—"}
                     </td>
                   ))}
                 </tr>
@@ -109,24 +152,33 @@ export default function DynamicTable({
         </table>
       </div>
 
-      {/* Footer / Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 text-sm">
+        <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-800 dark:bg-gray-800/50">
           <span className="text-gray-600 dark:text-gray-400">
             Page {currentPage} of {totalPages}
           </span>
+
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) => Math.max(page - 1, 1))
+              }
+              disabled={currentPage <= 1}
+              className="rounded border border-gray-300 bg-white px-3 py-1 text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               Previous
             </button>
+
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.min(page + 1, totalPages)
+                )
+              }
+              disabled={currentPage >= totalPages}
+              className="rounded border border-gray-300 bg-white px-3 py-1 text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               Next
             </button>

@@ -1,37 +1,31 @@
-
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { authClient } from '../../lib/auth-client';
 
-
 export default function SigninForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
 
-  // Form State
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
 
-  // UI States
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({});
-   const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const user = session?.user;
 
-  console.log('role', user?.role);
-  
-
-  // Handle Input Changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -41,7 +35,6 @@ export default function SigninForm() {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  // Form Validation
   const validate = () => {
     const newErrors = {};
     if (!formData.email.trim()) {
@@ -63,87 +56,91 @@ export default function SigninForm() {
     return true;
   };
 
-  // Email & Password Sign In using Better Auth
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validate()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-  setIsLoading(true);
-  const toastId = toast.loading('Signing you in...');
+    setIsLoading(true);
+    const toastId = toast.loading('Signing you in...');
 
-  try {
-    await authClient.signIn.email(
-      {
-        email: formData.email,
-        password: formData.password,
-        dontRemember: !formData.rememberMe,
-      
-      },
-      {
-        onRequest: () => setIsLoading(true),
-        onSuccess: (ctx) => {
-          setIsLoading(false);
-
-      
-          console.log('Full onSuccess Context Data:', ctx.data);
-          const loggedInUser = ctx.data?.user || ctx.data;
-          const userRole = loggedInUser?.role;
-
-          console.log('Extracted userRole:', userRole);
-
-          toast.success('Welcome back! Logging you in...', { id: toastId });
-
-          if (userRole === 'recruiter') {
-            router.push('/dashboard/recruiter');
-          } else {
-            router.push('/');
-          }
+    try {
+      await authClient.signIn.email(
+        {
+          email: formData.email,
+          password: formData.password,
+          dontRemember: !formData.rememberMe,
         },
-        onError: (ctx) => {
-          setIsLoading(false);
-          const errorMsg =
-            ctx.error?.message || 'Invalid email or password. Please try again.';
-          toast.error(errorMsg, { id: toastId });
-        },
-      }
-    );
-  } catch (err) {
-    setIsLoading(false);
-    toast.error('An unexpected error occurred. Please try again.', { id: toastId });
-  }
-};
+        {
+          onRequest: () => setIsLoading(true),
+          onSuccess: (ctx) => {
+            setIsLoading(false);
+            const loggedInUser = ctx.data?.user || ctx.data;
+            const userRole = loggedInUser?.role;
 
-  // Google Social Sign-In using Better Auth
-  const handleGoogleSignin = async () => {
+            toast.success('Welcome back! Logging you in...', { id: toastId });
+
+            if (redirectTo) {
+              router.push(redirectTo);
+            } else if (userRole === 'recruiter') {
+              router.push('/dashboard/recruiter');
+            } else {
+              router.push('/');
+            }
+          },
+          onError: (ctx) => {
+            setIsLoading(false);
+            const errorMsg =
+              ctx.error?.message || 'Invalid email or password. Please try again.';
+            toast.error(errorMsg, { id: toastId });
+          },
+        }
+      );
+    } catch (err) {
+      setIsLoading(false);
+      toast.error('An unexpected error occurred. Please try again.', { id: toastId });
+    }
+  };
+
+ const handleGoogleSignin = async () => {
     setIsGoogleLoading(true);
+    console.log('Initiating Google Sign-In...');
     const toastId = toast.loading('Connecting to Google...');
 
     try {
-      await authClient.signIn.social({
+      const result = await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/dashboard',
+        callbackURL: redirectTo || '/',
         errorCallbackURL: '/signin',
       });
-    } catch (err) {
+
+      // If the client returns an error object instead of throwing an exception:
+      if (result?.error) {
+        throw new Error(result.error.message || 'Google sign-in failed');
+      }
+
+      console.log('Google Sign-In initiated successfully.');
+      // Note: If it successfully redirects, the page unmounts anyway, 
+      // but keeping this ensures it resets if the redirect is prevented.
       setIsGoogleLoading(false);
-      toast.error('Google Sign-In failed. Please try again.', { id: toastId });
+      toast.dismiss(toastId);
+    } catch (err) {
+      console.error('Google Sign-In error:', err);
+      setIsGoogleLoading(false); // <--- Crucial: always reset loading on error
+      toast.error(err?.message || 'Google Sign-In failed. Please try again.', { id: toastId });
     }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0B0F17] transition-colors duration-300 relative overflow-hidden">
-      {/* Background Glow Elements */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/10 dark:bg-violet-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Main Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="max-w-md w-full bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 sm:p-10 shadow-xl dark:shadow-2xl backdrop-blur-xl relative z-10"
       >
-        {/* Header */}
         <div className="text-center space-y-2 mb-8">
           <Link href="/" className="inline-block mb-2">
             <span className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
@@ -158,7 +155,6 @@ const handleSubmit = async (e) => {
           </p>
         </div>
 
-        {/* Google OAuth Login */}
         <div className="mb-6">
           <motion.button
             whileHover={{ scale: 1.01 }}
@@ -196,7 +192,6 @@ const handleSubmit = async (e) => {
           </motion.button>
         </div>
 
-        {/* Divider */}
         <div className="relative my-6 text-center">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-200 dark:border-gray-800" />
@@ -206,9 +201,7 @@ const handleSubmit = async (e) => {
           </span>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
               Email Address *
@@ -235,7 +228,6 @@ const handleSubmit = async (e) => {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
@@ -277,7 +269,6 @@ const handleSubmit = async (e) => {
             )}
           </div>
 
-          {/* Remember Me Checkbox */}
           <div className="flex items-center">
             <input
               id="rememberMe"
@@ -295,7 +286,6 @@ const handleSubmit = async (e) => {
             </label>
           </div>
 
-          {/* Submit Button */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
@@ -314,11 +304,10 @@ const handleSubmit = async (e) => {
           </motion.button>
         </form>
 
-        {/* Signup Redirect */}
         <div className="mt-8 text-center text-xs text-gray-600 dark:text-gray-400">
           Don't have an account?{' '}
           <Link
-            href="/signup"
+            href={redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup'}
             className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             Create an account

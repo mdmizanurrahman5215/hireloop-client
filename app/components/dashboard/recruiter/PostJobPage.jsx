@@ -34,18 +34,27 @@ import {
   jobTypeOptions,
 } from "../../../constants/recruiter/job.constants";
 import toast from "react-hot-toast";
-import { createJobAction, getEditedJobById, updateJobAction } from "../../../lib/actions/jobActions";
+import {
+  createJobAction,
+  getEditedJobById,
+  updateJobAction,
+} from "../../../lib/actions/jobActions";
 
 export default function PostJobPage({ company }) {
   const [showPreview, setShowPreview] = useState(false);
-  const searchParams = useSearchParams();
-  const editId = searchParams.get("editId");
   const router = useRouter();
   const [loading, setIsLoading] = useState(false);
   const [job, setJob] = useState(null);
+  const searchParams = useSearchParams();
 
+  const redirect = searchParams.get("redirect");
+  const editId = redirect?.startsWith("edit/") ? redirect.split("/")[1] : null;
+
+  console.log({ editId });
   console.log({ company });
-  const recruiterCompany = company?.data?.success ? company?.data?.companies[0] : {};
+  const recruiterCompany = company?.data?.success
+    ? company?.data?.companies[0]
+    : {};
   console.log({ recruiterCompany });
 
   const activeJobsAvailable =
@@ -58,6 +67,7 @@ export default function PostJobPage({ company }) {
         try {
           const res = await getEditedJobById(editId);
           const jobData = res?.data?.data;
+          console.log("Fetched job data for res:", res);
           console.log("Fetched job data for editing:", jobData);
           if (res.success && jobData) {
             setJob(jobData);
@@ -118,7 +128,9 @@ export default function PostJobPage({ company }) {
     };
 
     // 4. Send request using Toast Promise for loading feedback
-    const toastId = toast.loading(editId ? "Updating job..." : "Posting job...");
+    const toastId = toast.loading(
+      editId ? "Updating job..." : "Posting job...",
+    );
     console.log("Submitting job with payload:", payload);
     try {
       const response = editId
@@ -127,7 +139,10 @@ export default function PostJobPage({ company }) {
       console.log({ response });
 
       if (response.success) {
-        toast.success(editId ? "Job updated successfully!" : "Job posted successfully!", { id: toastId });
+        toast.success(
+          editId ? "Job updated successfully!" : "Job posted successfully!",
+          { id: toastId },
+        );
 
         if (resetForm) resetForm();
 
@@ -163,7 +178,8 @@ export default function PostJobPage({ company }) {
               </h1>
 
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Create a detailed job listing and connect with qualified candidates.
+                Create a detailed job listing and connect with qualified
+                candidates.
               </p>
             </div>
 
@@ -228,18 +244,31 @@ export default function PostJobPage({ company }) {
             jobTitle: job?.title || "",
             category:
               categoryOptions.find(
-                (opt) => opt.value === (typeof job?.category === "object" ? job?.category?.value : job?.category)
-              ) || job?.category || null,
+                (opt) =>
+                  opt.value ===
+                  (typeof job?.category === "object"
+                    ? job?.category?.value
+                    : job?.category),
+              ) ||
+              job?.category ||
+              null,
             jobType:
               jobTypeOptions.find(
-                (opt) => opt.value === (typeof job?.jobType === "object" ? job?.jobType?.value : job?.jobType)
-              ) || job?.jobType || null,
+                (opt) =>
+                  opt.value ===
+                  (typeof job?.jobType === "object"
+                    ? job?.jobType?.value
+                    : job?.jobType),
+              ) ||
+              job?.jobType ||
+              null,
             salaryMin: job?.salary?.min ?? "",
             salaryMax: job?.salary?.max ?? "",
-            currency:
-              currencyOptions.find(
-                (opt) => opt.label === job?.salary?.currency || opt.value === job?.salary?.currency
-              ) || { value: "BDT", label: "BDT — TAKA" },
+            currency: currencyOptions.find(
+              (opt) =>
+                opt.label === job?.salary?.currency ||
+                opt.value === job?.salary?.currency,
+            ) || { value: "BDT", label: "BDT — TAKA" },
             remote: job?.location?.remote ?? false,
             city: job?.location?.city || "",
             country: job?.location?.country || "",
@@ -422,7 +451,9 @@ export default function PostJobPage({ company }) {
                           <SelectField
                             label="Currency"
                             value={values.currency}
-                            onChange={(option) => setFieldValue("currency", option)}
+                            onChange={(option) =>
+                              setFieldValue("currency", option)
+                            }
                             options={currencyOptions}
                             placeholder="Currency"
                             error={errors.currency}
@@ -452,7 +483,9 @@ export default function PostJobPage({ company }) {
                               </p>
 
                               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                {values.remote ? "Remote work enabled" : "Allow remote work"}
+                                {values.remote
+                                  ? "Remote work enabled"
+                                  : "Allow remote work"}
                               </p>
                             </div>
                           </div>
@@ -462,7 +495,9 @@ export default function PostJobPage({ company }) {
                             role="switch"
                             aria-checked={values.remote}
                             aria-label="Toggle remote position"
-                            onClick={() => setFieldValue("remote", !values.remote)}
+                            onClick={() =>
+                              setFieldValue("remote", !values.remote)
+                            }
                             className={`relative h-7 w-12 shrink-0 rounded-full p-1 outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-indigo-500/20 ${
                               values.remote
                                 ? "bg-indigo-600 shadow-md shadow-indigo-600/20"
@@ -471,7 +506,9 @@ export default function PostJobPage({ company }) {
                           >
                             <span
                               className={`block h-5 w-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ${
-                                values.remote ? "translate-x-5" : "translate-x-0"
+                                values.remote
+                                  ? "translate-x-5"
+                                  : "translate-x-0"
                               }`}
                             />
                           </button>
@@ -502,7 +539,8 @@ export default function PostJobPage({ company }) {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`h-11 w-full rounded-xl border bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition-all duration-200 focus:ring-2 dark:bg-slate-900 dark:text-slate-100 ${
-                              errors.applicationDeadline && touched.applicationDeadline
+                              errors.applicationDeadline &&
+                              touched.applicationDeadline
                                 ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/10"
                                 : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10 dark:border-slate-800"
                             }`}
@@ -642,7 +680,8 @@ export default function PostJobPage({ company }) {
                       </p>
 
                       <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                        Your company can currently publish {recruiterCompany.jobLimit} active jobs.
+                        Your company can currently publish{" "}
+                        {recruiterCompany.jobLimit} active jobs.
                       </p>
 
                       <div className="mt-4">
@@ -653,8 +692,9 @@ export default function PostJobPage({ company }) {
 
                           <span className="text-indigo-600 dark:text-indigo-400">
                             {Math.max(
-                              recruiterCompany.jobLimit - recruiterCompany.activeJobs,
-                              0
+                              recruiterCompany.jobLimit -
+                                recruiterCompany.activeJobs,
+                              0,
                             )}{" "}
                             remaining
                           </span>
@@ -665,8 +705,10 @@ export default function PostJobPage({ company }) {
                             className="h-full rounded-full bg-indigo-600 transition-all duration-300"
                             style={{
                               width: `${Math.min(
-                                (recruiterCompany.activeJobs / recruiterCompany.jobLimit) * 100,
-                                100
+                                (recruiterCompany.activeJobs /
+                                  recruiterCompany.jobLimit) *
+                                  100,
+                                100,
                               )}%`,
                             }}
                           />
@@ -766,12 +808,15 @@ export default function PostJobPage({ company }) {
                             <span className="inline-flex items-center gap-2">
                               <MapPin size={16} />
                               {values.remote ? "Remote" : values.city || "City"}
-                              {!values.remote && values.country && `, ${values.country}`}
+                              {!values.remote &&
+                                values.country &&
+                                `, ${values.country}`}
                             </span>
 
                             <span className="inline-flex items-center gap-2">
                               <CircleDollarSign size={16} />
-                              {values.salaryMin || "0"} - {values.salaryMax || "0"}{" "}
+                              {values.salaryMin || "0"} -{" "}
+                              {values.salaryMax || "0"}{" "}
                               {values.currency?.value || "USD"}
                             </span>
                           </div>
@@ -792,11 +837,20 @@ export default function PostJobPage({ company }) {
                     {/* Preview Content */}
                     <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:p-8">
                       <div className="space-y-8">
-                        <PreviewBlock title="Responsibilities" value={values.responsibilities} />
+                        <PreviewBlock
+                          title="Responsibilities"
+                          value={values.responsibilities}
+                        />
 
-                        <PreviewBlock title="Requirements" value={values.requirements} />
+                        <PreviewBlock
+                          title="Requirements"
+                          value={values.requirements}
+                        />
 
-                        <PreviewBlock title="Benefits" value={values.benefits} />
+                        <PreviewBlock
+                          title="Benefits"
+                          value={values.benefits}
+                        />
                       </div>
 
                       <div className="h-fit rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/70">
@@ -843,7 +897,9 @@ export default function PostJobPage({ company }) {
                             </span>
 
                             <span className="text-right text-sm font-bold text-slate-950 dark:text-white">
-                              {values.remote ? "Remote" : values.city || "Not selected"}
+                              {values.remote
+                                ? "Remote"
+                                : values.city || "Not selected"}
                             </span>
                           </div>
 
