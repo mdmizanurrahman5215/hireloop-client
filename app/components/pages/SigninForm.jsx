@@ -83,6 +83,8 @@ export default function SigninForm() {
               router.push(redirectTo);
             } else if (userRole === 'recruiter') {
               router.push('/dashboard/recruiter');
+            } else if (userRole === 'admin') {
+              router.push('/dashboard/admin');
             } else {
               router.push('/');
             }
