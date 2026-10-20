@@ -72,6 +72,32 @@ const updateJobInternal = createServerAction(
   }
 );
 
+const getPlanByIdInternal = createServerAction(
+  { requireAuth: false },
+  async (planId) => {
+    if (!planId || typeof planId !== "string") {
+      return {
+        success: false,
+        error: "Plan ID is required.",
+        status: 400,
+      };
+    }
+
+    return apiRequest(
+      `api/plans/${encodeURIComponent(planId)}`,
+      null,
+      {
+        method: "GET",
+      }
+    );
+  }
+);
+
+export const getPlanById = async (planId) => {
+  return getPlanByIdInternal(planId);
+};
+
+
 // These are the public Server Action exports.
 export async function createJobAction(payload) {
   return createJobInternal(payload);

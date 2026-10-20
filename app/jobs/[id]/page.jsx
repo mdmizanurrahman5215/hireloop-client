@@ -3,6 +3,8 @@ import React from 'react'
 import JobDetailsPage from '../../components/pages/JobDetailsPage'
 import { getJobById } from '../../lib/data'
 import EmptyState from '../../components/EmptyState'
+import { getServerUser } from '../../lib/server-session'
+// import { getPlanById } from '../../lib/actions/jobActions'
 
 const page = async ({ params }) => {
 
@@ -10,6 +12,7 @@ const page = async ({ params }) => {
     console.log("resolvedParams:", resolvedParams); 
   const id = resolvedParams?.id;
  console.log("id:", id); 
+ const user = await getServerUser();
   if (!id) {
     return (
       <EmptyState
@@ -21,6 +24,7 @@ const page = async ({ params }) => {
 
 
   const response = await getJobById(id);
+
    console.log("response:", response); 
 
  
@@ -39,7 +43,7 @@ const page = async ({ params }) => {
 
   return (
     <div>
-      <JobDetailsPage job={job} id = {id}/>
+      <JobDetailsPage job={job} id = {id} user={user}/>
      
     </div>
   );

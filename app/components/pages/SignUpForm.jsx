@@ -135,21 +135,51 @@ export default function SignUpForm() {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setIsGoogleLoading(true);
-    const toastId = toast.loading('Connecting to Google...');
+  // const handleGoogleSignup = async () => {
+  //   setIsGoogleLoading(true);
+  //   const toastId = toast.loading('Connecting to Google...');
 
-    try {
-      await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: redirectTo ? `/signin?redirect=${encodeURIComponent(redirectTo)}` : (role === 'recruiter' ? '/dashboard/recruiter' : '/'),
-        errorCallbackURL: redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup',
-      });
-    } catch (err) {
-      setIsGoogleLoading(false);
-      toast.error('Google Sign-In failed. Please try again.', { id: toastId });
-    }
-  };
+  //   try {
+  //     await authClient.signIn.social({
+  //       provider: 'google',
+  //        additionalData: {
+  //       role,
+  //     },
+  //       callbackURL: redirectTo ? `/signin?redirect=${encodeURIComponent(redirectTo)}` : (role === 'recruiter' ? '/dashboard/recruiter' : '/'),
+  //       errorCallbackURL: redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup',
+  //     });
+  //   } catch (err) {
+  //     setIsGoogleLoading(false);
+  //     toast.error('Google Sign-In failed. Please try again.', { id: toastId });
+  //   }
+  // };
+
+  const handleGoogleSignup = async () => {
+  setIsGoogleLoading(true);
+  const toastId = toast.loading("Connecting to Google...");
+
+  try {
+    await authClient.signIn.social({
+      provider: "google",
+      additionalData: {
+        role,
+      },
+      callbackURL: redirectTo
+        ? `/signin?redirect=${encodeURIComponent(redirectTo)}`
+        : role === "recruiter"
+          ? "/dashboard/recruiter"
+          : "/",
+      errorCallbackURL: redirectTo
+        ? `/signup?redirect=${encodeURIComponent(redirectTo)}`
+        : "/signup",
+    });
+  } catch (err) {
+    setIsGoogleLoading(false);
+    toast.error("Google Sign-In failed. Please try again.", {
+      id: toastId,
+    });
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0B0F17] transition-colors duration-300 relative overflow-hidden">
