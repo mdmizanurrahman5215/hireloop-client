@@ -64,49 +64,60 @@ export default function RegisterCompanyModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-
+  
 const handleSubmit = async (e) => {
   e.preventDefault();
 
   if (!logoFile) {
-    toast.error('Company logo is required.');
+    toast.error("Company logo is required.");
     return;
   }
 
   setLoading(true);
-  const toastId = toast.loading('Uploading logo and registering company...');
+  const toastId = toast.loading(
+    "Uploading logo and registering company..."
+  );
 
   try {
-    // 1. Upload logo image to ImgBB
     const logoUrl = await uploadImageToImgBB(logoFile);
 
     if (!logoUrl) {
-      throw new Error('Failed to upload image. Please try again.');
+      throw new Error("Failed to upload image. Please try again.");
     }
 
-    // 2. Prepare payload
     const payload = {
       ...formData,
       logo: logoUrl,
     };
 
-    // 3. Execute Server Action
     const response = await createCompanyAction(payload);
 
-    if (!response.success) {
-      throw new Error(response.error);
+    console.log("Server Action Response:", response);
+
+    if (!response?.success) {
+      throw new Error(
+        response?.error || "Company registration failed."
+      );
     }
 
-    toast.success('Company registered successfully!', { id: toastId });
+    toast.success("Company registered successfully!", {
+      id: toastId,
+    });
 
     onSuccess?.(response.data);
     onClose();
   } catch (error) {
-    toast.error(error.message || 'Failed to register company', { id: toastId });
+    console.error("Company registration error:", error);
+
+    toast.error(
+      error?.message || "Failed to register company.",
+      { id: toastId }
+    );
   } finally {
     setLoading(false);
   }
 };
+
  
 
   return (

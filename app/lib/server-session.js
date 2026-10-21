@@ -17,3 +17,13 @@ export async function getServerUser() {
     return null;
   }
 }
+
+export const requiredRole = async (role)=>{
+ 
+    const user = await getServerUser();
+    if (user.role !== role) {
+      return redirect('/unauthorized');
+    }
+    
+  
+}

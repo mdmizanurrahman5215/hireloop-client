@@ -9,7 +9,7 @@ import ActiveRolesCard from './ActiveRolesCard';
 
 export default function MyCompanyPage({ initialCompany }) {
   // Pass initialCompany from Server Component
-  const [company, setCompany] = useState(initialCompany?.data?.companies[0] || {});
+  const [company, setCompany] = useState(initialCompany?.data?.companies[0] || null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const mockRoles = [
@@ -23,7 +23,8 @@ export default function MyCompanyPage({ initialCompany }) {
       setCompany(data);
     }
   };
-
+  console.log({company});
+  
   if (!company) {
     return (
       <>

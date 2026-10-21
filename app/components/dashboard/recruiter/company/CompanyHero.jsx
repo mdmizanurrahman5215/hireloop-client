@@ -27,12 +27,10 @@ export default function CompanyHero({ company }) {
           {/* Company Logo Badge */}
           <div className="w-20 h-20 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center shrink-0 shadow-xs">
             <img
-              src={company?.logo || '/images/company-placeholder.png'}
-              alt={company?.name || 'Company Logo'}
+              src={company?.logo}
+              alt={company?.name}
               className="w-full h-full object-contain rounded-xl"
-              onError={(e) => {
-                e.currentTarget.src = '/images/company-placeholder.png';
-              }}
+             
             />
           </div>
 

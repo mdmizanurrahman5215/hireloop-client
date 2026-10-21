@@ -4,12 +4,16 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "@/app/components/dashboard/Sidebar";
 import Header from "@/app/components/dashboard/Header";
 import { getClientUser } from "../../lib/client-session";
+import { useRouter } from "next/navigation";
 
 export default function AdminLayout({ children }) {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
+
+  const router = useRouter(); // Renamed from 'route' to standard 'router'
 
   useEffect(() => {
     let isMounted = true;
@@ -19,11 +23,24 @@ export default function AdminLayout({ children }) {
         const userData = await getClientUser();
         console.log("Fetched User:", userData);
 
-        if (isMounted && userData) {
+        if (isMounted) {
           setUser(userData);
+          
+          // Check authorization after fetching the user
+          const userRole = userData?.role?.toLowerCase() || "";
+          if (userRole !== "admin") {
+            router.push("/unauthorized");
+          }
         }
       } catch (error) {
         console.error("Error fetching user session:", error);
+        if (isMounted) {
+          router.push("/unauthorized");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -32,8 +49,12 @@ export default function AdminLayout({ children }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
+  // Optional: Render a loading skeleton or null while checking auth to prevent flashing content
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <div className="min-h-screen transition-colors duration-300 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex font-sans antialiased">
