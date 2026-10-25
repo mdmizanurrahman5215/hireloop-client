@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MapPin, Globe } from 'lucide-react';
+import { Users, MapPin, Globe, AlertCircle, Clock, XCircle } from 'lucide-react';
 import EmptyCompanyState from './EmptyCompanyState';
 import RegisterCompanyModal from '../../../modals/RegisterCompanyModal';
 import CompanyHero from './CompanyHero';
@@ -23,8 +23,7 @@ export default function MyCompanyPage({ initialCompany }) {
       setCompany(data);
     }
   };
-  console.log({company});
-  
+
   if (!company) {
     return (
       <>
@@ -38,8 +37,31 @@ export default function MyCompanyPage({ initialCompany }) {
     );
   }
 
+  // স্ট্যাটাস চেক করার জন্য (lowercase এ রূপান্তর করে নেওয়া নিরাপদ)
+  const companyStatus = company?.status?.toLowerCase() || 'pending';
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 transition-colors duration-200">
+      
+      {/* Status Validation & Banner Notice */}
+      {companyStatus === 'pending' && (
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4 text-amber-800 dark:text-amber-200 shadow-sm">
+          <Clock className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="text-xs sm:text-sm">
+            <span className="font-bold">Pending Review:</span> Your company registration is currently under review by the HireLoop administration. Some features may be restricted until approval.
+          </div>
+        </div>
+      )}
+
+      {companyStatus === 'rejected' && (
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 p-4 text-rose-800 dark:text-rose-200 shadow-sm">
+          <XCircle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400" />
+          <div className="text-xs sm:text-sm">
+            <span className="font-bold">Registration Rejected:</span> Unfortunately, your company registration request was declined. Please contact support or update your information and re-apply.
+          </div>
+        </div>
+      )}
+
       {/* Hero Banner */}
       <CompanyHero company={company} />
 

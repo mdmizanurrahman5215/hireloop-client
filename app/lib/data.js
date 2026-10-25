@@ -37,8 +37,9 @@ export async function getJobsAction({
 }
 
 export const getCompaniesByRecruiter = createServerAction(
-  { requireAuth: true },
+  { requireAuth: true , roles: ["recruiter"], },
   async (payload, user) => {
+    
     const targetUserId = user?.id;
 
     if (!targetUserId) {
@@ -51,18 +52,27 @@ export const getCompaniesByRecruiter = createServerAction(
 
     return apiRequest("api/companies", null, {
       method: "GET",
+      auth:true,
       params: { userId: targetUserId },
     });
   }
 );
 
 export const getJobs = createServerAction(
-  { requireAuth: false },
-  async (filters = {}) => {
-    return apiRequest("api/jobs", null, {
+  {
+    requireAuth: true,
+    // roles: ["recruiter"],
+  },
+  async (filters = {}, user) => {
+    const result = await apiRequest("api/jobs", null, {
       method: "GET",
+      auth:true,
       params: filters,
     });
+
+  
+
+    return result;
   }
 );
 
@@ -80,7 +90,9 @@ export const getJobById = createServerAction(
     return apiRequest(
       `api/jobs/${encodeURIComponent(id)}`,
       null,
-      { method: "GET" }
+      { method: "GET",
+        // auth:true,
+       }
     );
   }
 );

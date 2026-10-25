@@ -18,12 +18,23 @@ export async function getServerUser() {
   }
 }
 
-export const requiredRole = async (role)=>{
- 
-    const user = await getServerUser();
-    if (user.role !== role) {
-      return redirect('/unauthorized');
-    }
-    
-  
+export const requiredRole = async (role) => {
+  const user = await getServerUser();
+  if (!user) {
+    return redirect("/signin");
+  }
+  if (user.role !== role) {
+    return redirect("/unauthorized");
+  }
+};
+
+export async function getServerSession() {
+  try {
+    return await auth.api.getSession({
+      headers: await headers(),
+    });
+  } catch (error) {
+    console.error("Error fetching server session:", error);
+    return null;
+  }
 }

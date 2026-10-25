@@ -4,6 +4,8 @@
 import axios from "axios";
 import { revalidatePath } from "next/cache";
 import { getServerUser } from "../server-session";
+import { createServerAction } from "../create-action";
+import { apiRequest } from "../api-request";
 
 const API_BASE_URL =
   process.env.API_URL ||
@@ -66,3 +68,47 @@ export async function createCompanyAction(payload) {
     };
   }
 }
+
+const getCompaniesInternal = createServerAction(
+  { requireAuth: true , roles:["admin"] },
+  async (filters = {}) => {
+    return apiRequest("api/companies", null, {
+      method: "GET",
+      auth:true,
+      params: filters,
+    });
+  }
+);
+
+export const getCompanies = async (filters = {}) => {
+  return getCompaniesInternal(filters);
+};
+
+const updateCompanyStatusInternal = createServerAction(
+  { requireAuth: true, roles:["admin"] },
+  async (payload, user) => {
+    const { companyId, status } = payload; 
+
+    if (!companyId || !status) {
+      return {
+        success: false,
+        error: "Company ID and Status are required.",
+        status: 400,
+      };
+    }
+
+    return apiRequest(
+      `api/companies/${encodeURIComponent(companyId)}`,
+      { status },
+      {
+        method: "PATCH",
+        auth:true,
+      }
+    );
+  }
+);
+
+export const updateCompanyStatus = async (companyId, status) => {
+
+  return updateCompanyStatusInternal({ companyId, status });
+};

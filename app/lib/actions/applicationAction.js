@@ -7,12 +7,12 @@ import { createServerAction } from "../create-action";
 
 
 const createApplicationInternal = createServerAction(
-  { requireAuth: false },
+  { requireAuth: true },
   async (payload) => {
-    console.log("Sending application data:", payload);
 
     return await apiRequest("api/applications", payload, {
       method: "POST",
+      auth:true,
     });
   }
 );
@@ -22,7 +22,7 @@ export async function createApplication(payload) {
 }
 
 const getUserApplicationsInternal = createServerAction(
-  { requireAuth: false },
+  { requireAuth: true, roles:["recruiter", "admin"] },
   async (userId) => {
     console.log("Fetching applications for user ID:", userId);
     if (!userId || typeof userId !== "string") {
@@ -38,6 +38,7 @@ const getUserApplicationsInternal = createServerAction(
       null,
       {
         method: "GET",
+        auth:true,
       }
     );
   }

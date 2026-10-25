@@ -11,6 +11,7 @@ const ManageJobs = async ({ searchParams }) => {
   const recruiterCompany = await getCompaniesByRecruiter();
  const companyId = recruiterCompany?.data?.companies[0]?._id; 
 
+console.log("companyId:", companyId); 
   
   let initialJobs = [];
   if (companyId) {
@@ -19,6 +20,7 @@ const ManageJobs = async ({ searchParams }) => {
       search: searchTerm,
       status: statusFilter !== "all" ? statusFilter : undefined
     });
+    console.log("jobs response:", res); 
     initialJobs = res?.data?.data?.jobs;
   }
  console.log("Initial jobs fetched:", initialJobs); 

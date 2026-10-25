@@ -1,150 +1,206 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Filter, Clock, CheckCircle2, XCircle, Search } from "lucide-react";
 
 import CompanyRegisterModal from "../../../modals/CompanyRegisterModal";
 import DynamicTable from "../../../common/DynamicTable";
 import MetricCard from "../MetricCard";
+import { getCompanies, updateCompanyStatus } from "../../../../lib/actions/companyActions";
+import toast from "react-hot-toast";
 
-// Dummy Data matching screenshot[cite: 4]
-const INITIAL_COMPANIES = [
-  {
-    id: "cmp_1",
-    name: "Nexus Labs",
-    initials: "NL",
-    email: "sarah.j@nexuslabs.io",
-    industry: "Quantum Computing",
-    status: "Pending",
-    dateSubmitted: "Oct 12, 2023",
-  },
-  {
-    id: "cmp_2",
-    name: "Aether Ventures",
-    initials: "AV",
-    email: "hiring@aetherv.co",
-    industry: "Venture Capital",
-    status: "Approved",
-    dateSubmitted: "Oct 10, 2023",
-  },
-  {
-    id: "cmp_3",
-    name: "Flux Tech",
-    initials: "FT",
-    email: "admin@fluxtech.net",
-    industry: "E-commerce",
-    status: "Rejected",
-    dateSubmitted: "Oct 09, 2023",
-  },
-  {
-    id: "cmp_4",
-    name: "Orbital Systems",
-    initials: "OS",
-    email: "ops@orbital.space",
-    industry: "Aerospace",
-    status: "Pending",
-    dateSubmitted: "Oct 14, 2023",
-  },
-  {
-    id: "cmp_5",
-    name: "Solaris Robotics",
-    initials: "SR",
-    email: "hr@solaris-robotics.com",
-    industry: "Robotics",
-    status: "Approved",
-    dateSubmitted: "Oct 05, 2023",
-  },
-];
+
 
 export default function CompanyRegistrationsPage() {
-  const [companies, setCompanies] = useState(INITIAL_COMPANIES);
+  const [companies, setCompanies] = useState([]);
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Status mutation handlers
-  const handleApprove = (companyId) => {
-    setCompanies((prev) =>
-      prev?.map((c) => (c?.id === companyId ? { ...c, status: "Approved" } : c))
-    );
+  // Initial load - Server action call
+  useEffect(() => {
+    async function loadCompanies() {
+      try {
+        setIsLoading(true);
+        const res = await getCompanies();
+        console.log({res})
+        const data = Array.isArray(res?.data?.companies) ? res?.data?.companies : res?.data || [];
+        setCompanies(data);
+      } catch (err) {
+        console.error("Failed to load companies:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadCompanies();
+  }, []);
+  console.log({companies})
+ 
+const handleApprove = async (companyId) => {
+    try {
+      const res = await updateCompanyStatus(companyId, "APPROVED");
+      console.log("Server Response approved:", res);
+
+      // ব্যাকএন্ড থেকে আসা আপডেটেড কোম্পানি অবজেক্টটি ধরে নিন (যেমন: res.company অথবা সরাসরি res)
+      const updatedCompany = res?.data?.company || res?.data || (res?.success ? res : null);
+console.log("updatedCompany:", updatedCompany);
+      if (res?.success || res?.status === 200 || updatedCompany) {
+        toast.success("Company approved successfully!");
+        
+        // শুধু নির্দিষ্ট কোম্পানিটিকে স্টেট থেকে খুঁজে তার ডাটা আপডেট করে দিন
+        setCompanies((prev) =>
+          prev?.map((c) =>
+            c?._id === companyId || c?.id === companyId
+              ? { ...c, ...(typeof updatedCompany === 'object' ? updatedCompany : {}), status: "APPROVED" }
+              : c
+          )
+        );
+      } else {
+        toast.error(res?.error || res?.message || "Failed to approve company.");
+      }
+    } catch (error) {
+      console.error("Failed to approve company:", error);
+      toast.error("Something went wrong!");
+    }
   };
 
-  const handleReject = (companyId) => {
-    setCompanies((prev) =>
-      prev?.map((c) => (c?.id === companyId ? { ...c, status: "Rejected" } : c))
-    );
+  const handleReject = async (companyId) => {
+    try {
+      const res = await updateCompanyStatus(companyId, "REJECTED");
+      console.log("Server Response REJECTED:", res);
+
+      const updatedCompany = res?.data?.company || res?.data || (res?.success ? res : null);
+console.log("updatedCompany:", updatedCompany);
+
+      if (res?.success || res?.status === 200 || updatedCompany) {
+        toast.success("Company rejected successfully!");
+        
+        // শুধু নির্দিষ্ট কোম্পানিটিকে স্টেট থেকে খুঁজে তার ডাটা আপডেট করে দিন
+        setCompanies((prev) =>
+          prev?.map((c) =>
+            c?._id === companyId || c?.id === companyId
+              ? { ...c, ...(typeof updatedCompany === 'object' ? updatedCompany : {}), status: "REJECTED" }
+              : c
+          )
+        );
+      } else {
+        toast.error(res?.error || res?.message || "Failed to reject company.");
+      }
+    } catch (error) {
+      console.error("Failed to reject company:", error);
+      toast.error("Something went wrong!");
+    }
   };
 
   const handleAddCompany = (newCompany) => {
     setCompanies((prev) => [newCompany, ...prev]);
   };
 
-  // Filtered dataset logic
+  // Search & Filtered dataset
   const filteredCompanies = useMemo(() => {
     return companies?.filter((c) => {
       const matchesSearch =
         c?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-        c?.email?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-        c?.industry?.toLowerCase()?.includes(searchQuery?.toLowerCase());
+        c?.userEmail?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+        c?.category?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+        c?.location?.toLowerCase()?.includes(searchQuery?.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "All" || c?.status?.toLowerCase() === statusFilter?.toLowerCase();
+        statusFilter === "All" ||
+        c?.status?.toLowerCase() === statusFilter?.toLowerCase();
 
       return matchesSearch && matchesStatus;
     });
   }, [companies, searchQuery, statusFilter]);
 
-  // Dynamic counts for bottom Metric Cards
+  // Metric counts
   const pendingCount = useMemo(
-    () => companies?.filter((c) => c?.status?.toLowerCase() === "pending")?.length || 14,
+    () => companies?.filter((c) => c?.status?.toLowerCase() === "pending")?.length || 0,
     [companies]
   );
   const approvedCount = useMemo(
-    () => companies?.filter((c) => c?.status?.toLowerCase() === "approved")?.length || 892,
+    () => companies?.filter((c) => c?.status?.toLowerCase() === "approved")?.length || 0,
     [companies]
   );
   const rejectedCount = useMemo(
-    () => companies?.filter((c) => c?.status?.toLowerCase() === "rejected")?.length || 42,
+    () => companies?.filter((c) => c?.status?.toLowerCase() === "rejected")?.length || 0,
     [companies]
   );
 
-  // Column structure for DynamicTable
+  // Table Columns Setup
   const columns = useMemo(
     () => [
       {
         header: "Company Name",
         accessor: "name",
         sortable: true,
-        cell: (row) => (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 text-[11px] font-bold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 uppercase">
-              {row?.initials || "CP"}
+        cell: (row) => {
+          const initials = row?.name
+            ? row.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .substring(0, 2)
+                .toUpperCase()
+            : "CP";
+
+          return (
+            <div className="flex items-center gap-3">
+              {row?.logo ? (
+                <img
+                  src={row.logo}
+                  alt={row.name}
+                  className="h-8 w-8 shrink-0 rounded-lg object-cover border border-slate-300 dark:border-slate-700"
+                />
+              ) : (
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 text-[11px] font-bold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 uppercase">
+                  {initials}
+                </div>
+              )}
+              <div>
+                <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 block">
+                  {row?.name}
+                </span>
+                {row?.website && (
+                  <a
+                    href={row.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-blue-500 hover:underline truncate max-w-[150px] block"
+                  >
+                    {row.website}
+                  </a>
+                )}
+              </div>
             </div>
-            <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">
-              {row?.name}
-            </span>
-          </div>
-        ),
+          );
+        },
       },
       {
         header: "Recruiter Email",
-        accessor: "email",
+        accessor: "userEmail",
         sortable: true,
         cell: (row) => (
           <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">
-            {row?.email}
+            {row?.userEmail || "N/A"}
           </span>
         ),
       },
       {
-        header: "Industry",
-        accessor: "industry",
+        header: "Category & Location",
+        accessor: "category",
         sortable: true,
         cell: (row) => (
-          <span className="inline-block rounded-md bg-slate-100 dark:bg-slate-900 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
-            {row?.industry}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="inline-block w-fit rounded-md bg-slate-100 dark:bg-slate-900 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+              {row?.category || "Technology"}
+            </span>
+            <span className="text-[10px] text-slate-500 capitalize">
+              {row?.location} • {row?.employeeCount}
+            </span>
+          </div>
         ),
       },
       {
@@ -179,26 +235,36 @@ export default function CompanyRegistrationsPage() {
       },
       {
         header: "Date Submitted",
-        accessor: "dateSubmitted",
+        accessor: "createdAt",
         sortable: true,
-        cell: (row) => (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {row?.dateSubmitted}
-          </span>
-        ),
+        cell: (row) => {
+          const dateStr = row?.createdAt
+            ? new Date(row.createdAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "N/A";
+          return (
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {dateStr}
+            </span>
+          );
+        },
       },
       {
         header: "Actions",
         accessor: "actions",
         cell: (row) => {
           const status = row?.status?.toLowerCase();
+          const rowId = row?._id || row?.id;
 
           return (
             <div className="flex items-center gap-2">
               {status !== "approved" && (
                 <button
                   type="button"
-                  onClick={() => handleApprove(row?.id)}
+                  onClick={() => handleApprove(rowId)}
                   className="rounded-lg px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
                 >
                   Approve
@@ -208,7 +274,7 @@ export default function CompanyRegistrationsPage() {
               {status !== "rejected" && (
                 <button
                   type="button"
-                  onClick={() => handleReject(row?.id)}
+                  onClick={() => handleReject(rowId)}
                   className="rounded-lg px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors"
                 >
                   Reject
@@ -224,7 +290,7 @@ export default function CompanyRegistrationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Section Header */}
+      {/* Top Header & Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -235,21 +301,20 @@ export default function CompanyRegistrationsPage() {
           </p>
         </div>
 
-        {/* Global Toolbar */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Quick Search Input */}
+          {/* Search Box */}
           <div className="relative w-full sm:w-60">
             <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e?.target?.value)}
-              placeholder="Search companies or emails..."
+              placeholder="Search companies, emails..."
               className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
             />
           </div>
 
-          {/* Status Filter */}
+          {/* Status Filter Dropdown */}
           <div className="relative">
             <select
               value={statusFilter}
@@ -264,7 +329,7 @@ export default function CompanyRegistrationsPage() {
             <Filter className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
           </div>
 
-          {/* Register New Company Button */}
+          {/* Add Company Button */}
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-white px-3.5 py-1.5 text-xs font-semibold text-white dark:text-slate-950 shadow-sm hover:bg-slate-800 dark:hover:bg-slate-200 transition-all"
@@ -275,7 +340,7 @@ export default function CompanyRegistrationsPage() {
         </div>
       </div>
 
-      {/* Main Companies Table */}
+      {/* Table */}
       <div>
         <DynamicTable
           columns={columns}
@@ -286,32 +351,32 @@ export default function CompanyRegistrationsPage() {
         />
       </div>
 
-      {/* Bottom Metric Summary Cards (Matching Mockup Footer[cite: 4]) */}
+      {/* Footer Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
         <MetricCard
           title="PENDING REVIEW"
           value={pendingCount}
-          change="+12% vs last week"
+          change="Awaiting review"
           isNegative={false}
           icon={Clock}
         />
         <MetricCard
           title="APPROVED PARTNERS"
           value={approvedCount}
-          change="+5% vs last week"
+          change="Active companies"
           isNegative={false}
           icon={CheckCircle2}
         />
         <MetricCard
           title="TOTAL REJECTIONS"
           value={rejectedCount}
-          change="Stable"
+          change="Declined"
           isNegative={true}
           icon={XCircle}
         />
       </div>
 
-      {/* Registration Modal */}
+      {/* Modal */}
       <CompanyRegisterModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

@@ -1,19 +1,19 @@
-// app/lib/server/create-action.js
+
 import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { getServerUser } from "@/app/lib/server-session";
-// import { getClientUser } from "./client-session";
-
+import { redirect } from "next/navigation";
+import { getServerUser } from "./server-session";
 
 export function createServerAction(
-  { requireAuth = true, revalidate } = {},
-  handler
+  { requireAuth = true, roles = [], revalidate } = {},
+  handler,
 ) {
   return async function action(payload) {
     try {
       const user = await getServerUser();
 
+      // Authentication check
       if (requireAuth && !user?.id) {
         return {
           success: false,
@@ -22,8 +22,34 @@ export function createServerAction(
         };
       }
 
+      // Role authorization check
+      if (roles.length > 0) {
+        if (!user?.id) {
+          return {
+            success: false,
+            error: "Authentication required.",
+            status: 401,
+          };
+        }
+
+        const userRole = user.role?.trim().toLowerCase();
+        const allowedRoles = roles.map((role) =>
+          role.trim().toLowerCase()
+        );
+
+        if (!allowedRoles.includes(userRole)) {
+          return {
+            success: false,
+            error: "Forbidden access. You do not have permission.",
+            status: 403,
+          };
+        }
+      }
+
+      // Execute action handler
       const result = await handler(payload, user);
 
+      // Revalidate cache after successful operation
       if (result?.success && revalidate) {
         const paths = Array.isArray(revalidate)
           ? revalidate
@@ -36,13 +62,24 @@ export function createServerAction(
 
       return result;
     } catch (error) {
+      // Next.js redirect() throws a special control-flow error.
+      // Rethrow it so Next.js can complete the redirect.
+      if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+        redirectFromError(error);
+      }
+
       console.error("Server Action Error:", error);
 
       return {
         success: false,
-        error: error?.message || "Something went wrong",
+        error: error?.message || "Something went wrong.",
         status: 500,
       };
     }
   };
+}
+
+// Preserve Next.js redirect control flow.
+function redirectFromError(error) {
+  throw error;
 }

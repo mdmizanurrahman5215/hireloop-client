@@ -5,10 +5,11 @@ import { createServerAction } from "../create-action";
 import { apiRequest } from "../api-request";
 
 const createJobInternal = createServerAction(
-  { requireAuth: true, revalidate: "/jobs" },
+  { requireAuth: true,roles:["admin","recruiter"], revalidate: "/jobs" },
   async (payload, user) => {
     return apiRequest("api/jobs", payload, {
       method: "POST",
+      auth:true,
       headers: {
         "x-user-id": user?.id || "",
       },
@@ -17,7 +18,7 @@ const createJobInternal = createServerAction(
 );
 
 const deleteJobInternal = createServerAction(
-  { requireAuth: true, revalidate: "/jobs" },
+  { requireAuth: true, roles:["admin","recruiter"], revalidate: "/jobs" },
   async (payload, user) => {
     const jobId = payload?.jobId || payload;
 
@@ -31,6 +32,7 @@ const deleteJobInternal = createServerAction(
 
     return apiRequest(`api/jobs/${encodeURIComponent(jobId)}`, null, {
       method: "DELETE",
+      auth:true,
       headers: {
         "x-user-id": user?.id || "",
       },
@@ -39,7 +41,7 @@ const deleteJobInternal = createServerAction(
 );
 
 const getEditedJobInternal = createServerAction(
-  { requireAuth: false },
+  { requireAuth: false, roles:["recruiter"] },
   async (id) => {
     if (!id || typeof id !== "string") {
       return {
@@ -51,12 +53,13 @@ const getEditedJobInternal = createServerAction(
 
     return apiRequest(`api/jobs/${encodeURIComponent(id)}`, null, {
       method: "GET",
+      auth:true,
     });
   }
 );
 
 const updateJobInternal = createServerAction(
-  { requireAuth: false, revalidate: "/jobs" },
+  { requireAuth: false, roles:["recruiter"], revalidate: "/jobs" },
   async ({ editId, payload }) => {
     if (!editId || typeof editId !== "string") {
       return {
@@ -68,12 +71,13 @@ const updateJobInternal = createServerAction(
 
     return apiRequest(`api/jobs/${encodeURIComponent(editId)}`, payload, {
       method: "PUT",
+      auth:true,
     });
   }
 );
 
 const getPlanByIdInternal = createServerAction(
-  { requireAuth: false },
+  { requireAuth: true },
   async (planId) => {
     if (!planId || typeof planId !== "string") {
       return {
@@ -88,6 +92,7 @@ const getPlanByIdInternal = createServerAction(
       null,
       {
         method: "GET",
+        auth:true,
       }
     );
   }

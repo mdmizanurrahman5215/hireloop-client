@@ -1,21 +1,40 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ShieldAlert, ArrowLeft, Home, Lock } from "lucide-react";
+import { getClientUser } from "../lib/client-session";
 
-export default function UnauthorizedPage({ userRole = "recruiter" }) {
+export default function UnauthorizedPage() {
   const router = useRouter();
 
-  // Determine standard fallback path according to user role
-  const getHomePath = () => {
-    const role = userRole?.toLowerCase();
-    if (role === "admin" || role === "superadmin") return "/dashboard/admin";
-    if (role === "recruiter") return "/dashboard/recruiter";
-    return "/";
-  };
+const getHomePath = async () => {
+  console.log("Path clicked");
+
+  const user = await getClientUser();
+  console.log("User:", user);
+
+  const role = user?.role?.toLowerCase();
+
+  console.log("Role:", role);
+
+  if (role === "admin" || role === "superadmin") {
+    return "/dashboard/admin";
+  }
+
+  if (role === "recruiter") {
+    return "/dashboard/recruiter";
+  }
+
+  return "/";
+};
+
+const handleReturnToDashboard = async () => {
+  const path = await getHomePath();
+  router.push(path);
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 transition-colors duration-300">
@@ -57,13 +76,14 @@ export default function UnauthorizedPage({ userRole = "recruiter" }) {
             <span>Go Back</span>
           </button>
 
-          <Link
-            href={getHomePath()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
-          >
-            <Home className="w-4 h-4" />
-            <span>Return to Dashboard</span>
-          </Link>
+         <button
+  type="button"
+  onClick={handleReturnToDashboard}
+  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
+>
+  <Home className="w-4 h-4" />
+  <span>Return to Dashboard</span>
+</button>
         </div>
 
         {/* Bottom Support Text */}

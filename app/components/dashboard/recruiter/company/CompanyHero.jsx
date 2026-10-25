@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Plus, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, Plus, CheckCircle2, Clock, XCircle, LucideCheckCircle2 } from 'lucide-react';
 
 export default function CompanyHero({ company }) {
   // Format external website link safely
@@ -13,7 +13,7 @@ export default function CompanyHero({ company }) {
     }
     return `https://${trimmed}`;
   };
-
+  console.log({company})
   const websiteHref = formatWebsiteUrl(company?.website);
   const isWebsiteAvailable = Boolean(company?.website);
 
@@ -35,22 +35,47 @@ export default function CompanyHero({ company }) {
           </div>
 
           <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {company?.name || 'LuminaTech Systems'}
-              </h1>
+  <div className="flex flex-wrap items-center gap-3">
+    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+      {company?.name || 'LuminaTech Systems'}
+    </h1>
 
-              {/* Status Badge */}
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                <CheckCircle2 className="w-3 h-3" /> APPROVED
-              </span>
-            </div>
+    {/* Dynamic Status Badge */}
+    {(() => {
+      const status = (company?.status || 'pending').toLowerCase();
+      
+      let badgeStyle = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+      let IconComponent = Clock;
+      let label = company?.status || 'Pending';
 
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-xl line-clamp-2 leading-relaxed">
-              {company?.description ||
-                'Engineering the future of enterprise cloud intelligence and distributed ledger solutions.'}
-            </p>
-          </div>
+      if (status === 'approved') {
+        badgeStyle = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        IconComponent = LucideCheckCircle2;
+        label = company?.status || 'Approved';
+      } else if (status === 'rejected') {
+        badgeStyle = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
+        IconComponent = XCircle;
+        label = company?.status || 'Rejected';
+      } else if (status === 'pending') {
+        badgeStyle = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+        IconComponent = Clock;
+        label = company?.status || 'Pending';
+      }
+
+      return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border uppercase tracking-wider ${badgeStyle}`}>
+          <IconComponent className="w-3 h-3" />
+          {label}
+        </span>
+      );
+    })()}
+  </div>
+
+  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-xl line-clamp-2 leading-relaxed">
+    {company?.description ||
+      'Engineering the future of enterprise cloud intelligence and distributed ledger solutions.'}
+  </p>
+</div>
         </div>
 
         {/* Action Buttons */}
