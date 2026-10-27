@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import MetricCard from "../MetricCard";
 import DynamicTable from "../../../common/DynamicTable";
+import { UpdateUserRole } from "../../../../lib/actions/userAction";
+ import toast from "react-hot-toast";
 
 
 // Top Metric Cards Summary Data
@@ -53,67 +55,49 @@ const USER_METRICS = [
 ];
 
 // Initial Dummy User Data (Matching Mockup)
-const INITIAL_USERS_DATA = [
-  {
-    id: "usr_1",
-    name: "Jordan Davis",
-    initials: "JD",
-    avatar: null,
-    email: "jordan.davis@example.com",
-    role: "Seeker",
-    joinDate: "Oct 12, 2023",
-    status: "Active",
-  },
-  {
-    id: "usr_2",
-    name: "Elena Rodriguez",
-    initials: "ER",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80",
-    email: "elena.r@talentflow.io",
-    role: "Recruiter",
-    joinDate: "Sep 28, 2023",
-    status: "Active",
-  },
-  {
-    id: "usr_3",
-    name: "Marcus Webb",
-    initials: "MW",
-    avatar: null,
-    email: "m.webb@outlook.com",
-    role: "Seeker",
-    joinDate: "Aug 05, 2023",
-    status: "Suspended",
-  },
-  {
-    id: "usr_4",
-    name: "Tom Hiddleston",
-    initials: "TH",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
-    email: "t.hiddles@graki-tech.com",
-    role: "Recruiter",
-    joinDate: "Nov 01, 2023",
-    status: "Active",
-  },
-];
 
-export default function UserManagementPage() {
+
+export default function UserManagementPage({INITIAL_USERS_DATA}) {
   const [users, setUsers] = useState(INITIAL_USERS_DATA);
   const [roleFilter, setRoleFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // User action handlers with optional chaining error safety
-  const handleRoleToggle = (userId) => {
+
+
+const handleRoleToggle = async (userId, role) => {
+  const toastId = toast.loading("Updating user role...");
+
+  try {
+    const result = await UpdateUserRole(userId, role);
+
+    if (result?.success === false) {
+      toast.error(result.error || "Failed to update user role.", {
+        id: toastId,
+      });
+      return;
+    }
+
     setUsers((prevUsers) =>
-      prevUsers?.map((u) => {
-        if (u?.id === userId) {
-          const newRole = u?.role === "Recruiter" ? "Seeker" : "Recruiter";
-          return { ...u, role: newRole };
-        }
-        return u;
-      })
+      prevUsers.map((user) =>
+        user.id === userId
+          ? { ...user, role }
+          : user
+      )
     );
-  };
+
+    toast.success(`User role updated to ${role}.`, {
+      id: toastId,
+    });
+  } catch (error) {
+    console.error("Role update failed:", error);
+
+    toast.error("Something went wrong. Please try again.", {
+      id: toastId,
+    });
+  }
+};
 
   const handleStatusToggle = (userId) => {
     setUsers((prevUsers) =>
@@ -148,141 +132,254 @@ export default function UserManagementPage() {
   }, [users, searchQuery, roleFilter]);
 
   // Dynamic Table Column Configuration
-  const columns = useMemo(
-    () => [
-      {
-        header: "User Name",
-        accessor: "name",
-        sortable: true,
-        cell: (row) => (
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-              {row?.avatar ? (
-                <Image
-                  src={row?.avatar}
-                  alt={row?.name || "User Avatar"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <span>{row?.initials || "U"}</span>
-              )}
-            </div>
-            <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">
-              {row?.name}
-            </span>
-          </div>
-        ),
-      },
-      {
-        header: "Email Address",
-        accessor: "email",
-        sortable: true,
-        cell: (row) => (
-          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            {row?.email}
-          </span>
-        ),
-      },
-      {
-        header: "Role",
-        accessor: "role",
-        sortable: true,
-        cell: (row) => {
-          const isRecruiter = row?.role?.toLowerCase() === "recruiter";
-          return (
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${
-                isRecruiter
-                  ? "border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  : "border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-              }`}
-            >
-              <UserCog className="h-3 w-3 opacity-70" />
-              {row?.role}
-            </span>
-          );
-        },
-      },
-      {
-        header: "Join Date",
-        accessor: "joinDate",
-        sortable: true,
-        cell: (row) => (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {row?.joinDate}
-          </span>
-        ),
-      },
-      {
-        header: "Status",
-        accessor: "status",
-        sortable: true,
-        cell: (row) => {
-          const isActive = row?.status?.toLowerCase() === "active";
-          return (
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize ${
-                isActive
-                  ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
-                  : "border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400"
-              }`}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isActive ? "bg-emerald-500" : "bg-rose-500"
-                }`}
+ 
+const columns = useMemo(
+  () => [
+    {
+      header: "User Name",
+      accessor: "name",
+      sortable: true,
+      cell: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-slate-200 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            {row?.avatar ? (
+              <Image
+                src={row.avatar}
+                alt={row?.name || "User Avatar"}
+                fill
+                className="object-cover"
               />
-              {row?.status}
+            ) : (
+              <span>
+                {row?.initials ||
+                  row?.name
+                    ?.trim()
+                    .split(/\s+/)
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() ||
+                  "U"}
+              </span>
+            )}
+          </div>
+
+          <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+            {row?.name || "Unknown User"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: "Email Address",
+      accessor: "email",
+      sortable: true,
+      cell: (row) => (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            {row?.email || "No email"}
+          </span>
+
+          {row?.emailVerified === false && (
+            <span className="text-[10px] text-amber-600 dark:text-amber-400">
+              Unverified
             </span>
-          );
-        },
+          )}
+        </div>
+      ),
+    },
+    {
+      header: "Role",
+      accessor: "role",
+      sortable: true,
+      cell: (row) => {
+        const role = row?.role?.toLowerCase() || "jobseeker";
+
+        const roleStyles = {
+          admin:
+            "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/40 dark:text-violet-300",
+          superadmin:
+            "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300",
+          recruiter:
+            "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200",
+          jobseeker:
+            "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400",
+        };
+
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize ${
+              roleStyles[role] || roleStyles.jobseeker
+            }`}
+          >
+            <UserCog className="h-3 w-3 opacity-70" />
+            {role}
+          </span>
+        );
       },
-      {
-        header: "Actions",
-        accessor: "actions",
-        cell: (row) => {
-          const isRecruiter = row?.role?.toLowerCase() === "recruiter";
-          const isSuspended = row?.status?.toLowerCase() === "suspended";
+    },
+    {
+      header: "Plan",
+      accessor: "planId",
+      sortable: true,
+      cell: (row) => (
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+          {row?.planId || "No plan"}
+        </span>
+      ),
+    },
+    {
+      header: "Join Date",
+      accessor: "createdAt",
+      sortable: true,
+      cell: (row) => {
+        const date = row?.createdAt
+          ? new Date(row.createdAt)
+          : null;
 
-          return (
-            <div className="flex items-center gap-3 text-xs font-medium">
-              <button
-                type="button"
-                onClick={() => handleRoleToggle(row?.id)}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-              >
-                {isRecruiter ? "Make Seeker" : "Make Recruiter"}
-              </button>
+        const isValidDate =
+          date && !Number.isNaN(date.getTime());
 
+        return (
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {isValidDate
+              ? date.toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "—"}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Subscription",
+      accessor: "subscriptionStatus",
+      sortable: true,
+      cell: (row) => {
+        const status =
+          row?.subscriptionStatus?.toLowerCase() || "free";
+
+        const isFree = status === "free";
+        const isActive = status === "active";
+
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize ${
+              isActive
+                ? "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/60 dark:bg-emerald-950/60 dark:text-emerald-400"
+                : isFree
+                  ? "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                  : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400"
+            }`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Status",
+      accessor: "status",
+      sortable: true,
+      cell: (row) => {
+        // Your current user object has no status field.
+        // Do not assume an absent status means suspended.
+        const status = row?.status?.toLowerCase() || "unknown";
+
+        const isActive = status === "active";
+        const isSuspended = status === "suspended";
+
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize ${
+              isActive
+                ? "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/60 dark:bg-emerald-950/60 dark:text-emerald-400"
+                : isSuspended
+                  ? "border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-400"
+                  : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isActive
+                  ? "bg-emerald-500"
+                  : isSuspended
+                    ? "bg-rose-500"
+                    : "bg-slate-400"
+              }`}
+            />
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Actions",
+      accessor: "actions",
+      cell: (row) => {
+        const role = row?.role?.toLowerCase() || "jobseeker";
+        const isRecruiter = role === "recruiter";
+        const isSuspended =
+          row?.status?.toLowerCase() === "suspended";
+
+        // Protect privileged accounts from ordinary role toggles.
+        const isPrivileged =
+          role === "admin" || role === "superadmin";
+
+        return (
+          <div className="flex items-center gap-3 text-xs font-medium">
+            {!isPrivileged && (
+             <button
+  type="button"
+  onClick={() =>
+    handleRoleToggle(
+      row?.id,
+      row?.role?.toLowerCase() === "recruiter"
+        ? "jobseeker"
+        : "recruiter"
+    )
+  }
+  className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+>
+  {row?.role?.toLowerCase() === "recruiter"
+    ? "Make Seeker"
+    : "Make Recruiter"}
+</button>
+            )}
+
+            {!isPrivileged && (
               <button
                 type="button"
                 onClick={() => handleStatusToggle(row?.id)}
                 className={
                   isSuspended
-                    ? "text-emerald-600 dark:text-emerald-400 hover:underline"
-                    : "text-rose-600 dark:text-rose-400 hover:underline"
+                    ? "text-emerald-600 hover:underline dark:text-emerald-400"
+                    : "text-rose-600 hover:underline dark:text-rose-400"
                 }
               >
                 {isSuspended ? "Activate" : "Suspend"}
               </button>
+            )}
 
-              {isSuspended && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteUser(row?.id)}
-                  className="text-slate-500 hover:text-rose-500 transition-colors"
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          );
-        },
+            {!isPrivileged && isSuspended && (
+              <button
+                type="button"
+                onClick={() => handleDeleteUser(row?.id)}
+                className="text-slate-500 transition-colors hover:text-rose-500"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        );
       },
-    ],
-    [users]
-  );
+    },
+  ],
+  [users, handleRoleToggle, handleStatusToggle, handleDeleteUser]
+);
+
 
   return (
     <div className="space-y-6">

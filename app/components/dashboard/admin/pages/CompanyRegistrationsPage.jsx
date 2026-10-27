@@ -43,13 +43,13 @@ const handleApprove = async (companyId) => {
       const res = await updateCompanyStatus(companyId, "APPROVED");
       console.log("Server Response approved:", res);
 
-      // ব্যাকএন্ড থেকে আসা আপডেটেড কোম্পানি অবজেক্টটি ধরে নিন (যেমন: res.company অথবা সরাসরি res)
+    
       const updatedCompany = res?.data?.company || res?.data || (res?.success ? res : null);
 console.log("updatedCompany:", updatedCompany);
       if (res?.success || res?.status === 200 || updatedCompany) {
         toast.success("Company approved successfully!");
         
-        // শুধু নির্দিষ্ট কোম্পানিটিকে স্টেট থেকে খুঁজে তার ডাটা আপডেট করে দিন
+       
         setCompanies((prev) =>
           prev?.map((c) =>
             c?._id === companyId || c?.id === companyId
@@ -77,7 +77,7 @@ console.log("updatedCompany:", updatedCompany);
       if (res?.success || res?.status === 200 || updatedCompany) {
         toast.success("Company rejected successfully!");
         
-        // শুধু নির্দিষ্ট কোম্পানিটিকে স্টেট থেকে খুঁজে তার ডাটা আপডেট করে দিন
+       
         setCompanies((prev) =>
           prev?.map((c) =>
             c?._id === companyId || c?.id === companyId

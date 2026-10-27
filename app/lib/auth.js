@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { getOAuthState } from "better-auth/api";
+import { admin } from "better-auth/plugins"
 
 if (!process.env.MONGO_DB_URI) {
   throw new Error(
@@ -26,6 +27,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+   plugins: [
+        admin() 
+    ],
 
   user: {
     additionalFields: {
@@ -117,6 +121,7 @@ export const auth = betterAuth({
       },
     },
   },
+
 
   secret: process.env.BETTER_AUTH_SECRET,
 
