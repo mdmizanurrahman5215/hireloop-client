@@ -18,6 +18,9 @@ import {
   Sun,
   Moon,
   ShieldCheck,
+  Search,
+  Bookmark,
+  FileText,
 } from "lucide-react";
 
 // Icon Map for string-based navLinks passed dynamically from props
@@ -32,20 +35,109 @@ const ICON_MAP = {
 
 // Centralized Navigation Config by User Role matching your updated routes
 const NAV_CONFIG = {
+  jobseeker: [
+    {
+      id: "dashboard",
+      name: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/jobseeker",
+    },
+    // {
+    //   id: "jobs",
+    //   name: "Jobs",
+    //   icon: Search,
+    //   href: "/dashboard/jobseeker/jobs",
+    // },
+    {
+      id: "saved-jobs",
+      name: "Saved Jobs",
+      icon: Bookmark,
+      href: "/dashboard/jobseeker/saved-jobs",
+    },
+    {
+      id: "applications",
+      name: "Applications",
+      icon: FileText,
+      href: "/dashboard/jobseeker/applications",
+    },
+    {
+      id: "billing",
+      name: "Billing",
+      icon: CreditCard,
+      href: "/dashboard/jobseeker/billing",
+    },
+    {
+      id: "settings",
+      name: "Settings",
+      icon: Settings,
+      href: "/dashboard/jobseeker/settings",
+    },
+  ],
+
   recruiter: [
-    { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/dashboard/recruiter" },
-    { id: "my-company", name: "My Company", icon: Building2, href: "/dashboard/recruiter/mycompany" },
-    { id: "manage-jobs", name: "Manage Jobs", icon: Briefcase, href: "/dashboard/recruiter/jobs" },
-    { id: "applications", name: "Applications", icon: Users, href: "/dashboard/recruiter/applications" },
-    { id: "settings", name: "Settings", icon: Settings, href: "/dashboard/recruiter/settings" },
+    {
+      id: "dashboard",
+      name: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/recruiter",
+    },
+    {
+      id: "my-company",
+      name: "My Company",
+      icon: Building2,
+      href: "/dashboard/recruiter/mycompany",
+    },
+    {
+      id: "manage-jobs",
+      name: "Manage Jobs",
+      icon: Briefcase,
+      href: "/dashboard/recruiter/jobs",
+    },
+    {
+      id: "applications",
+      name: "Applications",
+      icon: Users,
+      href: "/dashboard/recruiter/applications",
+    },
+    {
+      id: "settings",
+      name: "Settings",
+      icon: Settings,
+      href: "/dashboard/recruiter/settings",
+    },
   ],
   admin: [
-    { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/dashboard/admin" },
+    {
+      id: "dashboard",
+      name: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/admin",
+    },
     { id: "users", name: "Users", icon: Users, href: "/dashboard/admin/users" },
-    { id: "companies", name: "Companies", icon: Building2, href: "/dashboard/admin/companies" },
-    { id: "jobs", name: "Jobs", icon: Briefcase, href: "/dashboard/admin/jobs" },
-    { id: "payments", name: "Payments", icon: CreditCard, href: "/dashboard/admin/payments" },
-    { id: "settings", name: "Settings", icon: Settings, href: "/dashboard/admin/settings" },
+    {
+      id: "companies",
+      name: "Companies",
+      icon: Building2,
+      href: "/dashboard/admin/companies",
+    },
+    {
+      id: "jobs",
+      name: "Jobs",
+      icon: Briefcase,
+      href: "/dashboard/admin/jobs",
+    },
+    {
+      id: "payments",
+      name: "Payments",
+      icon: CreditCard,
+      href: "/dashboard/admin/payments",
+    },
+    {
+      id: "settings",
+      name: "Settings",
+      icon: Settings,
+      href: "/dashboard/admin/settings",
+    },
   ],
 };
 
@@ -71,14 +163,24 @@ export default function Sidebar({
   };
 
   // Determine active role normalized to lower-case based on user object
-  const currentRole = useMemo(() => {
-    const rawRole = user?.role || user?.userType || "recruiter";
-    const lowerRole = rawRole?.toString()?.toLowerCase();
+const currentRole = useMemo(() => {
+  const rawRole = user?.role || user?.userType || "jobseeker";
+  const lowerRole = rawRole.toString().toLowerCase();
 
-    if (lowerRole === "admin" || lowerRole === "superadmin") return "admin";
+  if (lowerRole === "admin" || lowerRole === "superadmin") {
+    return "admin";
+  }
 
+  if (lowerRole === "recruiter") {
     return "recruiter";
-  }, [user?.role, user?.userType]);
+  }
+
+  if (["jobseeker", "job-seeker", "job_seeker"].includes(lowerRole)) {
+    return "jobseeker";
+  }
+
+  return "jobseeker";
+}, [user?.role, user?.userType]);
 
   // Compute active navigation items dynamically
   const activeNavItems = useMemo(() => {
@@ -186,7 +288,7 @@ export default function Sidebar({
             const Icon = item?.icon || LayoutDashboard;
 
             // Updated Route matching logic for sub-routes
-            const isBaseDashboard = item?.href === "/dashboard/recruiter" || item?.href === "/dashboard/admin";
+            const isBaseDashboard = item?.href === "/dashboard/recruiter" || item?.href === "/dashboard/admin" || item?.href === "/dashboard/jobseeker";
             const isActive = isBaseDashboard
               ? pathname === item?.href
               : pathname === item?.href || pathname?.startsWith(`${item?.href}/`);
