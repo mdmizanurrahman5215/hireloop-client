@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import JobSearchHeader from "../common/jobs/JobSearchHeader";
 import JobFilterSidebar from "../common/jobs/JobFilterSidebar";
 import JobCard from "../common/jobs/JobCard";
 import Pagination from "../common/jobs/Pagination";
+import toast from "react-hot-toast";
+import { getSavedJobs, saveJob } from "../../lib/actions/saved-jobs-action";
+
 
 export const JOB_CATEGORIES = [
   { id: "Full-time", label: "Full-time", count: "1.2k" },
@@ -29,6 +32,7 @@ export default function JobsPage({
 
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
+const [savedJobsLoading, setSavedJobsLoading] = useState(false);
 
   // URL Query Params Update Helper
   const updateQueryParams = (newParams) => {
@@ -73,15 +77,92 @@ export default function JobsPage({
       page: newPage.toString(),
     });
   };
+useEffect(() => {
+  const fetchSavedJobs = async () => {
+    try {
+      setSavedJobsLoading(true);
 
-  // Bookmark Toggle
-  const handleBookmarkToggle = (jobId) => {
-    setBookmarkedIds((prev) =>
-      prev.includes(jobId)
-        ? prev.filter((id) => id !== jobId)
-        : [...prev, jobId]
-    );
+      const response = await getSavedJobs();
+      console.log({ response });
+      
+
+      if (!response?.success) {
+        console.error(
+          "Failed to fetch saved jobs:",
+          response?.error,
+        );
+        return;
+      }
+
+      // apiRequest response.data contains the backend response.
+      const savedJobs = response?.data?.data || [];
+
+      const savedIds = savedJobs.map((item) => item.jobId);
+
+      setBookmarkedIds(savedIds);
+    } catch (error) {
+      console.error("Fetch saved jobs error:", error);
+    } finally {
+      setSavedJobsLoading(false);
+    }
   };
+
+  fetchSavedJobs();
+}, []);
+  // Bookmark Toggle
+
+
+const handleBookmarkToggle = async (jobId) => {
+  if (!jobId) {
+    toast.error("Invalid job ID.");
+    return;
+  }
+
+  // Prevent requests before saved jobs finish loading.
+  if (savedJobsLoading) {
+    return;
+  }
+
+  // Prevent duplicate save requests.
+  if (bookmarkedIds?.includes(jobId)) {
+    toast("This job is already saved.", {
+      icon: "🔖",
+    });
+    return;
+  }
+
+  const toastId = toast.loading("Saving job...");
+
+  try {
+    const response = await saveJob(jobId);
+
+    if (!response?.success) {
+      toast.error(
+        response?.error ||
+          response?.message ||
+          "Failed to save job.",
+        { id: toastId },
+      );
+      return;
+    }
+
+    setBookmarkedIds((prev) =>
+      prev.includes(jobId) ? prev : [...prev, jobId],
+    );
+
+    toast.success(
+      response?.message || "Job saved successfully!",
+      { id: toastId },
+    );
+  } catch (error) {
+    console.error("Bookmark toggle error:", error);
+
+    toast.error(
+      error?.message || "Something went wrong. Please try again.",
+      { id: toastId },
+    );
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-4 md:p-8 font-sans transition-colors">

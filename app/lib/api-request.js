@@ -72,7 +72,7 @@ export async function apiRequest(endpoint, payload = null, options = {}) {
           ? { data: payload }
           : {}),
       });
-
+        console.log("API Request response:", {response });
       result = {
         success: true,
         data: response.data,
@@ -87,9 +87,10 @@ export async function apiRequest(endpoint, payload = null, options = {}) {
         error?.response?.data?.message ||
         error?.message ||
         "Failed to connect to server",
-      status: error?.response?.status || 500,
+      status: error?.response?.status ,
     };
   }
+  console.log("API Request Result:", {result });
 
   // Redirect outside the try/catch.
   if (!result.success && redirectOnError) {

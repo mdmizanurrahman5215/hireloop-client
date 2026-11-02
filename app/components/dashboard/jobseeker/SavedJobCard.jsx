@@ -13,7 +13,36 @@ import {
   Clock,
   ExternalLink,
   Building2,
+  Banknote,
 } from "lucide-react";
+
+// Format salary object into readable text
+const formatSalary = (salary) => {
+  if (!salary || typeof salary !== "object") {
+    return typeof salary === "string" ? salary : "Salary not specified";
+  }
+
+  const { min, max, currency } = salary;
+
+  const formatAmount = (amount) =>
+    Number(amount).toLocaleString("en-US");
+
+  const currencyLabel = currency || "";
+
+  if (min != null && max != null) {
+    return `${formatAmount(min)} - ${formatAmount(max)} ${currencyLabel}`;
+  }
+
+  if (min != null) {
+    return `From ${formatAmount(min)} ${currencyLabel}`;
+  }
+
+  if (max != null) {
+    return `Up to ${formatAmount(max)} ${currencyLabel}`;
+  }
+
+  return "Salary not specified";
+};
 
 export default function SavedJobCard({
   job = {},
@@ -25,7 +54,7 @@ export default function SavedJobCard({
     company = "Unknown Company",
     companyLogo = "",
     location = "Location not specified",
-    salary = "",
+    salary,
     employmentType = "Full-time",
     savedAt = "",
     category = "Other",
@@ -33,7 +62,8 @@ export default function SavedJobCard({
     closingSoon = false,
   } = job ?? {};
 
-  const companyInitial = company?.charAt?.(0)?.toUpperCase() || "C";
+  const companyInitial =
+    company?.charAt?.(0)?.toUpperCase() || "C";
 
   const formattedDate = savedAt
     ? new Date(savedAt).toLocaleDateString("en-US", {
@@ -42,9 +72,16 @@ export default function SavedJobCard({
       })
     : "Recently";
 
+  const formattedSalary = formatSalary(salary);
+
   const jobHref = id
     ? `/jobs/${encodeURIComponent(String(id))}`
     : "/jobs";
+
+  const handleRemove = () => {
+    if (!id) return;
+    onRemove?.(id);
+  };
 
   return (
     <motion.article
@@ -63,7 +100,6 @@ export default function SavedJobCard({
 
         {/* Company Logo */}
         <div className="w-11 h-11 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden">
-
           {companyLogo ? (
             <img
               src={companyLogo}
@@ -75,7 +111,6 @@ export default function SavedJobCard({
               {companyInitial || <Building2 size={19} />}
             </span>
           )}
-
         </div>
 
         {/* Job Details */}
@@ -108,9 +143,10 @@ export default function SavedJobCard({
               {location}
             </span>
 
-            {salary && (
+            {formattedSalary && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[10px] text-slate-600 dark:text-slate-300">
-                {salary}
+                <Banknote size={11} />
+                {formattedSalary}
               </span>
             )}
 
@@ -132,7 +168,7 @@ export default function SavedJobCard({
             {isExpired ? (
               <span className="text-[10px] font-medium text-red-500">
                 <Clock size={12} className="inline mr-1" />
-                Closed Yesterday
+                Application Closed
               </span>
             ) : closingSoon ? (
               <span className="text-[10px] font-medium text-amber-500">
@@ -153,7 +189,7 @@ export default function SavedJobCard({
             {!isExpired && (
               <button
                 type="button"
-                onClick={() => onRemove?.(id)}
+                onClick={handleRemove}
                 title="Remove saved job"
                 aria-label={`Remove ${title} from saved jobs`}
                 className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
@@ -165,7 +201,7 @@ export default function SavedJobCard({
             {isExpired ? (
               <button
                 type="button"
-                onClick={() => onRemove?.(id)}
+                onClick={handleRemove}
                 className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 px-3 py-2 text-[11px] font-semibold transition-colors"
               >
                 <Trash2 size={13} />
