@@ -22,7 +22,7 @@ export async function createApplication(payload) {
 }
 
 const getUserApplicationsInternal = createServerAction(
-  { requireAuth: true, roles:["recruiter", "admin"] },
+  { requireAuth: true, roles:["recruiter", "admin","jobseeker"] },
   async (userId) => {
     console.log("Fetching applications for user ID:", userId);
     if (!userId || typeof userId !== "string") {

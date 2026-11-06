@@ -93,7 +93,7 @@ export async function apiRequest(endpoint, payload = null, options = {}) {
   console.log("API Request Result:", {result });
 
   // Redirect outside the try/catch.
-  if (!result.success && redirectOnError) {
+  if (!result.success) {
     const route = STATUS_ROUTES[result.status];
 
     if (route) {

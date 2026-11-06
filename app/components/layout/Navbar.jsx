@@ -66,7 +66,7 @@ export default function Navbar() {
 
   // Dynamic Dashboard Route
   const dashboardPath = getDashboardPath(user);
-  console.log({dashboardPath});
+ 
   
 
   // UI States
